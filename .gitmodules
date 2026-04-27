@@ -1,0 +1,3 @@
+[submodule "MambaAD"]
+	path = MambaAD
+	url = https://github.com/lewandofskee/MambaAD.git
