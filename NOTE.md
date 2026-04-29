@@ -1,0 +1,3 @@
+- AB test: Layer norm in HSS block swap for AdaLN (one-hot label)
+- Preprocess mel-frequency spectrogram sliding window (arrival rate - congestion)
+- Anomalib : PatchCore, ... legacy AD, baseline
