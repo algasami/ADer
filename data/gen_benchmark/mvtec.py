@@ -3,10 +3,13 @@ import json
 
 
 class MVTecSolver(object):
+    # CLSNAMES_2D = [
+    #     'carpet', 'grid', 'leather', 'tile', 'wood',
+    #     'bottle', 'cable', 'capsule', 'hazelnut', 'metal_nut',
+    #     'pill', 'screw', 'toothbrush', 'transistor', 'zipper',
+    # ]
     CLSNAMES_2D = [
-        'carpet', 'grid', 'leather', 'tile', 'wood',
-        'bottle', 'cable', 'capsule', 'hazelnut', 'metal_nut',
-        'pill', 'screw', 'toothbrush', 'transistor', 'zipper',
+        'bottle',
     ]
     CLSNAMES_3D = [
         'bagel', 'cable_gland', 'carrot', 'cookie', 'dowel',
@@ -53,8 +56,9 @@ class MVTecSolver(object):
             f.write(json.dumps(info, indent=4) + "\n")
 
 
+# ? Why is it toggled by comments instead of a command line argument?
 if __name__ == '__main__':
-    # runner = MVTecSolver(root='data/mvtec', is2D=True)
-    # runner.run()
-    runner = MVTecSolver(root='data/mvtec3d', is2D=False)
+    runner = MVTecSolver(root='data/mvtec', is2D=True)
     runner.run()
+    # runner = MVTecSolver(root='data/mvtec3d', is2D=False)
+    # runner.run()
