@@ -48,7 +48,8 @@ def get_loader(cfg):
 											   num_workers=cfg.trainer.data.num_workers_per_gpu,
 											   pin_memory=cfg.trainer.data.pin_memory,
 											   drop_last=cfg.trainer.data.drop_last,
-											   persistent_workers=cfg.trainer.data.persistent_workers)
+										   persistent_workers=cfg.trainer.data.persistent_workers,
+										   timeout=getattr(cfg.trainer.data, 'timeout', 0))
 	test_loader = torch.utils.data.DataLoader(dataset=test_set,
 											  batch_size=cfg.trainer.data.batch_size_per_gpu_test,
 											  shuffle=False,
@@ -56,5 +57,6 @@ def get_loader(cfg):
 											  num_workers=cfg.trainer.data.num_workers_per_gpu,
 											  pin_memory=cfg.trainer.data.pin_memory,
 											  drop_last=False,
-											  persistent_workers=cfg.trainer.data.persistent_workers)
+									  persistent_workers=cfg.trainer.data.persistent_workers,
+									  timeout=getattr(cfg.trainer.data, 'timeout', 0))
 	return train_loader, test_loader

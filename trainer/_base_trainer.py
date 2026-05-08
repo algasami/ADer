@@ -3,6 +3,7 @@ import copy
 import glob
 import shutil
 import datetime
+import traceback
 import tabulate
 import torch
 from util.util import makedirs, log_cfg, able, log_msg, get_log_terms, update_log_term
@@ -165,16 +166,41 @@ class BaseTrainer():
         f.close()
 
     def train(self):
+        log_msg(self.logger, 'DEBUG: enter train()')
+        print('DEBUG: enter train()', flush=True)
         self.reset(isTrain=True)
         self.train_loader.sampler.set_epoch(int(self.epoch)) if self.cfg.dist else None
         train_length = self.cfg.data.train_size
-        train_loader = iter(self.train_loader)
+        log_msg(self.logger, f'DEBUG: before creating train iterator. train_loader={self.train_loader}')
+        print(f'DEBUG: before creating train iterator. train_loader={self.train_loader}', flush=True)
+        try:
+            train_loader = iter(self.train_loader)
+            log_msg(self.logger, 'DEBUG: created train iterator')
+            print('DEBUG: created train iterator', flush=True)
+        except Exception as e:
+            log_msg(self.logger, f'DEBUG: exception creating train iterator: {e}')
+            print(f'DEBUG: exception creating train iterator: {e}', flush=True)
+            raise
         while self.epoch < self.epoch_full and self.iter < self.iter_full:
             self.scheduler_step(self.iter)
             # ---------- data ----------
             t1 = get_timepc()
             self.iter += 1
-            train_data = next(train_loader)
+            if self.iter <= 3:
+                log_msg(self.logger, f'DEBUG: before next(train_loader), iter={self.iter}')
+                print(f'DEBUG: before next(train_loader), iter={self.iter}', flush=True)
+            try:
+                train_data = next(train_loader)
+            except Exception as e:
+                err_tb = traceback.format_exc()
+                log_msg(self.logger, f'DEBUG: exception in next(train_loader) at iter={self.iter}: {e}')
+                log_msg(self.logger, f'DEBUG: traceback for next(train_loader):\n{err_tb}')
+                print(f'DEBUG: exception in next(train_loader) at iter={self.iter}: {e}', flush=True)
+                print(err_tb, flush=True)
+                raise
+            if self.iter <= 3:
+                log_msg(self.logger, f'DEBUG: after next(train_loader), iter={self.iter}')
+                print(f'DEBUG: after next(train_loader), iter={self.iter}', flush=True)
             self.set_input(train_data)
             t2 = get_timepc()
             update_log_term(self.log_terms.get('data_t'), t2 - t1, 1, self.master)
@@ -247,9 +273,14 @@ class BaseTrainer():
 
     def run(self):
         log_msg(self.logger,
-                f'==> Starting {self.cfg.mode}ing with {self.cfg.nnodes} nodes x {self.cfg.ngpus_per_node} GPUs')
+            f'==> Starting {self.cfg.mode}ing with {self.cfg.nnodes} nodes x {self.cfg.ngpus_per_node} GPUs')
+        print(f'==> Starting {self.cfg.mode}ing with {self.cfg.nnodes} nodes x {self.cfg.ngpus_per_node} GPUs', flush=True)
+        log_msg(self.logger, 'DEBUG: about to call train/test')
+        print('DEBUG: about to call train/test', flush=True)
         if self.cfg.mode in ['train']:
             self.train()
+            log_msg(self.logger, 'DEBUG: returned from train()')
+            print('DEBUG: returned from train()', flush=True)
         elif self.cfg.mode in ['test']:
             self.test()
         else:

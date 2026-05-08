@@ -62,6 +62,7 @@ class cfg_common(Namespace):
 		self.trainer.data.drop_last = True
 		self.trainer.data.pin_memory = True
 		self.trainer.data.persistent_workers = False
+		self.trainer.data.timeout = 0
 
 		# ==> loss
 		self.loss = Namespace()
