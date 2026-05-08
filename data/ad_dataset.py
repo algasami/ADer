@@ -55,9 +55,20 @@ class DefaultAD(data.Dataset):
 
 		self.data_all = []
 		name = self.root.split('/')[-1]
+		print("dataset root:", self.root)
+		print("dataset name:", name)
+		print("using class:", type(self).__name__)
+		print("meta keys:", json.load(open(f'{self.root}/{cfg.data.meta}', 'r')).keys())
 		if name in ['mvtec', 'coco', 'visa', 'medical', 'btad', 'mpdd', 'mad_sim', 'mad_real']:
 			meta_info = json.load(open(f'{self.root}/{cfg.data.meta}', 'r'))
 			meta_info = meta_info['train' if self.train else 'test']
+			self.cls_names = cfg.data.cls_names
+			if not isinstance(self.cls_names, list):
+				self.cls_names = [self.cls_names]
+			self.cls_names = list(meta_info.keys()) if len(self.cls_names) == 0 else self.cls_names
+		elif name in ['dcase-2020-spectrogram']:
+			meta_info = json.load(open(f'{self.root}/{cfg.data.meta}', 'r'))
+			meta_info = meta_info['id_00' if self.train else 'id_02']
 			self.cls_names = cfg.data.cls_names
 			if not isinstance(self.cls_names, list):
 				self.cls_names = [self.cls_names]
@@ -124,14 +135,22 @@ class DefaultAD(data.Dataset):
 		img_path, mask_path, cls_name, specie_name, anomaly = data['img_path'], data['mask_path'], data['cls_name'], data['specie_name'], data['anomaly']
 		img_path = f'{self.root}/{img_path}'
 		img = self.loader(img_path)
-		if anomaly == 0:
-			img_mask = Image.fromarray(np.zeros((img.size[0], img.size[1])), mode='L')
+		img_w, img_h = img.size
+		if anomaly == 0 or mask_path == '':
+			img_mask = Image.fromarray(
+				np.zeros((img_h, img_w), dtype=np.uint8),
+				mode='L'
+			)
 		else:
-			img_mask = np.array(self.loader_target(f'{self.root}/{mask_path}')) > 0
-			img_mask = Image.fromarray(img_mask.astype(np.uint8) * 255, mode='L')
+			img_mask = np.array(
+				self.loader_target(f'{self.root}/{mask_path}')
+			) > 0
+			img_mask = Image.fromarray(
+				img_mask.astype(np.uint8) * 255,
+				mode='L'
+			)
 		img = self.transform(img) if self.transform is not None else img
 		img_mask = self.target_transform(img_mask) if self.target_transform is not None and img_mask is not None else img_mask
-		img_mask = [] if img_mask is None else img_mask
 		return {'img': img, 'img_mask': img_mask, 'cls_name': cls_name, 'anomaly': anomaly, 'img_path': img_path}
 
 

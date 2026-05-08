@@ -8,7 +8,7 @@ class MIMIIToySolver(object):
     def __init__(self, root):
         self.root = root
         self.meta_path = f'{root}/meta.json'
-        self.phases = ['train_out', 'test_out']
+        self.phases = ['id_00', 'id_02', 'id_04', 'id_06']
         self.CLSNAMES = self.CLSNAMES_2D
 
     def run(self):
@@ -25,7 +25,7 @@ class MIMIIToySolver(object):
                     img_names.sort()
                     for idx, img_name in enumerate(img_names):
                         info_img = dict(
-                            img_path=f'{img_dir.replace(cls_dir, cls_name)}/{img_name}',
+                            img_path=f'{img_dir.replace(cls_dir, cls_name)}{img_name}',
                             mask_path='',
                             cls_name=cls_name,
                             specie_name=specie,
