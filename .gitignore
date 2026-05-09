@@ -2,5 +2,6 @@
 runs
 data/mvtec
 data/dcase-2020-spectrogram
+src/results
 *.zip
 tmp
