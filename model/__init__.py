@@ -36,7 +36,8 @@ def get_model(cfg_model):
 	else:
 		model = model_fn(pretrained=pretrained, **kwargs)
 		if checkpoint_path:
-			ckpt = torch.load(checkpoint_path, map_location='cpu')
+			ckpt = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+			# ! Security Risk: loading ckpt may execute arbitrary code, so we should check the ckpt before loading
 			if 'net' in ckpt.keys():
 				state_dict = ckpt['net']
 			else:

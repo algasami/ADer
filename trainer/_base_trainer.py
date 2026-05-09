@@ -103,7 +103,8 @@ class BaseTrainer():
         self.iter, self.epoch = cfg.trainer.iter, cfg.trainer.epoch
         self.iter_full, self.epoch_full = cfg.trainer.iter_full, cfg.trainer.epoch_full
         if cfg.trainer.resume_dir:
-            state_dict = torch.load(cfg.model.kwargs['checkpoint_path'], map_location='cpu')
+            state_dict = torch.load(cfg.model.kwargs['checkpoint_path'], map_location='cpu', weights_only=False)
+        # ! Security Risk: loading ckpt may execute arbitrary code, so we should check the ckpt before loading
             self.optim.load_state_dict(state_dict['optimizer'])
             self.scheduler.load_state_dict(state_dict['scheduler'])
             self.loss_scaler.load_state_dict(state_dict['scaler']) if self.loss_scaler else None
