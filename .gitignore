@@ -1,7 +1,7 @@
 *.pyc 
 runs
 data/mvtec
-data/dcase-2020-spectrogram
+data/dcase-2020*
 src/results
 *.zip
 tmp

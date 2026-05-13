@@ -39,5 +39,5 @@ class MIMIIToySolver(object):
 
 # Good! Run me to generate toy meta.json for MIMII dataset. The meta.json will be used by the benchmark.
 if __name__ == '__main__':
-    runner = MIMIIToySolver(root='data/dcase-2020-spectrogram')
+    runner = MIMIIToySolver(root='data/dcase-2020-three-channel')
     runner.run()

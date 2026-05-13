@@ -66,7 +66,7 @@ class DefaultAD(data.Dataset):
 			if not isinstance(self.cls_names, list):
 				self.cls_names = [self.cls_names]
 			self.cls_names = list(meta_info.keys()) if len(self.cls_names) == 0 else self.cls_names
-		elif name in ['dcase-2020-spectrogram']:
+		elif name in ['dcase-2020-spectrogram', 'dcase-2020-three-channel']:
 			meta_info = json.load(open(f'{self.root}/{cfg.data.meta}', 'r'))
 			meta_info = meta_info['id_00' if self.train else 'id_02']
 			self.cls_names = cfg.data.cls_names
