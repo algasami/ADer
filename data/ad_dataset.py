@@ -123,7 +123,13 @@ class DefaultAD(data.Dataset):
 				meta_info[cls_name] = data_cls_all
 
 		for cls_name in self.cls_names:
-			self.data_all.extend(meta_info[cls_name])
+			# use ratio
+			cls_data = meta_info[cls_name]
+			try:
+				cls_data = cls_data[:int(len(cls_data) * cfg.ratio)]
+			except AttributeError:
+				pass
+			self.data_all.extend(cls_data)
 		random.shuffle(self.data_all) if self.train else None
 		self.length = len(self.data_all)
 
