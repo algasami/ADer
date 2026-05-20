@@ -15,3 +15,10 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 - MVTec baseline
 - fix MIMII issue
 - AdaLN (backlog)
+
+## 5/20, 2026
+
+- PaDiM backbone, resnet change observe baseline
+- swap layer normalization to AdaLN, for both PaDiM and mambaAD
+- all changes: resnet, adaLN or not, FiLM or not
+- copy PaDiM modify AdaLN, FiLM
