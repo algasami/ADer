@@ -3,14 +3,13 @@ import json
 
 
 class MVTecSolver(object):
-    # CLSNAMES_2D = [
-    #     'carpet', 'grid', 'leather', 'tile', 'wood',
-    #     'bottle', 'cable', 'capsule', 'hazelnut', 'metal_nut',
-    #     'pill', 'screw', 'toothbrush', 'transistor', 'zipper',
-    # ]
     CLSNAMES_2D = [
-        'bottle',
+        'bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
+        'tile', 'toothbrush', 'transistor', 'wood', 'zipper',
     ]
+    # CLSNAMES_2D = [
+    #     'bottle',
+    # ]
     CLSNAMES_3D = [
         'bagel', 'cable_gland', 'carrot', 'cookie', 'dowel',
         'foam', 'peach', 'potato', 'rope', 'tire',
