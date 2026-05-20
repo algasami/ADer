@@ -5,6 +5,12 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN
 from timm.data.constants import IMAGENET_DEFAULT_STD
 from torchvision.transforms.v2 import Compose, Resize, ToTensor, Normalize, CenterCrop
 
+def test_against_model(model, model_name, datamodule):
+	print(f"Testing {model_name} model")
+	engine = Engine()
+	engine.fit(model=model, datamodule=datamodule)
+	engine.test(model=model, datamodule=datamodule)
+
 if __name__ == "__main__":
 	dm = MVTecADPatched(
 		root="../data/mvtec",
@@ -35,17 +41,7 @@ if __name__ == "__main__":
 			Normalize(mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD, inplace=True),
 		]),
 	)
-	print("Initialized datamodule")
-	engine = Engine()
-	print("Initialized engine")
 	resnet18_model = Padim(backbone="resnet18", n_features=100)
-	print("Initialized resnet18 model")
-	engine.fit(model=resnet18_model, datamodule=dm)
-	engine.test(model=resnet18_model, datamodule=dm)
-	print("Finished testing resnet18 model")
-
+	test_against_model(resnet18_model, "ResNet18 PaDiM", dm)
 	wide_resnet50_2_model = Padim(backbone="wide_resnet50_2", n_features=550)
-	print("Initialized wide_resnet50_2 model")
-	engine.fit(model=wide_resnet50_2_model, datamodule=dm)
-	engine.test(model=wide_resnet50_2_model, datamodule=dm)
-	print("Finished testing wide_resnet50_2 model")
+	test_against_model(wide_resnet50_2_model, "Wide ResNet50-2 PaDiM", dm)
