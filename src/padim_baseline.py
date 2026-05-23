@@ -1,5 +1,6 @@
 from mvtecad_patched_datamodule import MVTecADPatched
 from anomalib.models import Padim
+from padim_adaln.lightning_model import PadimAdaLN
 from anomalib.engine import Engine
 from timm.data.constants import IMAGENET_DEFAULT_MEAN
 from timm.data.constants import IMAGENET_DEFAULT_STD
@@ -41,6 +42,12 @@ if __name__ == "__main__":
 			Normalize(mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD, inplace=True),
 		]),
 	)
+
+	adaln_resnet18_model = PadimAdaLN(backbone="resnet18", n_features=100)
+	test_against_model(adaln_resnet18_model, "ResNet18 PaDiM-AdaLN", dm)
+	adaln_wide_resnet50_2_model = PadimAdaLN(backbone="wide_resnet50_2", n_features=550)
+	test_against_model(adaln_wide_resnet50_2_model, "Wide ResNet50-2 PaDiM-AdaLN", dm)
+
 	resnet18_model = Padim(backbone="resnet18", n_features=100)
 	test_against_model(resnet18_model, "ResNet18 PaDiM", dm)
 	wide_resnet50_2_model = Padim(backbone="wide_resnet50_2", n_features=550)

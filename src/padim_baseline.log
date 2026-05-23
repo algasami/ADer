@@ -1,0 +1,79 @@
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+You are using a CUDA device ('NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [2]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing ResNet18 PaDiM model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114/114 0:00:23 • 0:00:00 5.25it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [2]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.6262872815132141     │
+│       image_F1Score       │    0.8441907167434692     │
+│        pixel_AUROC        │    0.8273766040802002     │
+│       pixel_F1Score       │    0.2419087290763855     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54/54 0:02:46 • 0:00:00 0.32it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [2]
+Testing Wide ResNet50-2 PaDiM model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114/114 0:00:22 • 0:00:00 5.47it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [2]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.6554718017578125     │
+│       image_F1Score       │    0.8457337617874146     │
+│        pixel_AUROC        │    0.8374305963516235     │
+│       pixel_F1Score       │    0.25701647996902466    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54/54 0:02:51 • 0:00:00 0.32it/s 
