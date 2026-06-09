@@ -6,6 +6,7 @@ from anomalib.engine import Engine
 from timm.data.constants import IMAGENET_DEFAULT_MEAN
 from timm.data.constants import IMAGENET_DEFAULT_STD
 from torchvision.transforms.v2 import Compose, Resize, ToTensor, Normalize, CenterCrop
+import torch
 
 performance_dict: dict[str, dict[str, float]] = {}
 
@@ -53,10 +54,15 @@ patched_dm = MVTecADPatched(
 # test_against_model(adaln_wide_resnet50_2_model, "Wide ResNet50-2 PaDiM-AdaLN", patched_dm)
 
 # General-purpose Models
-resnet18_model = Padim(backbone="resnet18", n_features=100)
-test_against_model(resnet18_model, "ResNet18 PaDiM - General", patched_dm)
-wide_resnet50_2_model = Padim(backbone="wide_resnet50_2", n_features=550)
-test_against_model(wide_resnet50_2_model, "Wide ResNet50-2 PaDiM - General", patched_dm)
+general_resnet18_model = Padim(backbone="resnet18", n_features=100)
+test_against_model(general_resnet18_model, "ResNet18 PaDiM - General", patched_dm)
+general_wide_resnet50_2_model = Padim(backbone="wide_resnet50_2", n_features=550)
+test_against_model(general_wide_resnet50_2_model, "Wide ResNet50-2 PaDiM - General", patched_dm)
+
+del general_resnet18_model
+del general_wide_resnet50_2_model
+
+torch.cuda.empty_cache()
 
 # Specialized Models
 for category in categories:
@@ -74,8 +80,14 @@ for category in categories:
 			Normalize(mean=IMAGENET_DEFAULT_MEAN, std=IMAGENET_DEFAULT_STD, inplace=True),
 		]),
 	)
+	resnet18_model = Padim(backbone="resnet18", n_features=100)
+	wide_resnet50_2_model = Padim(backbone="wide_resnet50_2", n_features=550)
 	test_against_model(resnet18_model, f"ResNet18 PaDiM - {category}", category_dm)
 	test_against_model(wide_resnet50_2_model, f"Wide ResNet50-2 PaDiM - {category}", category_dm)
+
+	del resnet18_model
+	del wide_resnet50_2_model
+	torch.cuda.empty_cache()
 
 headers = ["model", "image_AUROC", "image_F1Score", "pixel_AUROC", "pixel_F1Score"]
 
