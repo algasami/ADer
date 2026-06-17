@@ -1,0 +1,1272 @@
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+You are using a CUDA device ('NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing ResNet18 PaDiM - General model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114/114 0:01:01 • 0:00:00 1.98it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.6431114673614502     │
+│       image_F1Score       │    0.8436974883079529     │
+│        pixel_AUROC        │    0.8144751191139221     │
+│       pixel_F1Score       │    0.20723284780979156    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54/54 0:05:08 • 0:00:00 0.21it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - General model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114/114 0:01:00 • 0:00:00 2.07it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+Dataset not found at ../data/mvtec.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.6593425273895264     │
+│       image_F1Score       │    0.8469629883766174     │
+│        pixel_AUROC        │    0.8305953741073608     │
+│       pixel_F1Score       │    0.25144392251968384    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54/54 0:05:17 • 0:00:00 0.21it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: bottle
+Testing ResNet18 PaDiM - bottle model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:04 • 0:00:00 22.31it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9888888001441956     │
+│       image_F1Score       │    0.9677419066429138     │
+│        pixel_AUROC        │    0.9770601987838745     │
+│       pixel_F1Score       │    0.6775479912757874     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 0:00:10 • 0:00:00 0.20it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - bottle model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:04 • 0:00:00 15.12it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9833332896232605     │
+│       image_F1Score       │    0.9593495726585388     │
+│        pixel_AUROC        │    0.9752364158630371     │
+│       pixel_F1Score       │    0.6789013743400574     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 0:00:09 • 0:00:00 0.21it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: cable
+Testing ResNet18 PaDiM - cable model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:05 • 0:00:00 5.82it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8086581230163574     │
+│       image_F1Score       │    0.8181818127632141     │
+│        pixel_AUROC        │    0.8984439969062805     │
+│       pixel_F1Score       │    0.3904884457588196     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:27 • 0:00:00 0.15it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - cable model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:05 • 0:00:00 12.67it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.7775487303733826     │
+│       image_F1Score       │    0.7980295419692993     │
+│        pixel_AUROC        │    0.9503098726272583     │
+│       pixel_F1Score       │    0.4225323498249054     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:28 • 0:00:00 0.14it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: capsule
+Testing ResNet18 PaDiM - capsule model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:05 • 0:00:00 13.51it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8671719431877136     │
+│       image_F1Score       │     0.943231463432312     │
+│        pixel_AUROC        │    0.9804820418357849     │
+│       pixel_F1Score       │    0.35822173953056335    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:35 • 0:00:00 0.11it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - capsule model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:05 • 0:00:00 10.64it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8380534648895264     │
+│       image_F1Score       │     0.939130425453186     │
+│        pixel_AUROC        │    0.9722711443901062     │
+│       pixel_F1Score       │    0.34385672211647034    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:35 • 0:00:00 0.12it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: carpet
+Testing ResNet18 PaDiM - carpet model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9/9 0:00:08 • 0:00:00 2.42it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │     0.867977499961853     │
+│       image_F1Score       │     0.892307698726654     │
+│        pixel_AUROC        │    0.9745692014694214     │
+│       pixel_F1Score       │    0.5118010640144348     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:17 • 0:00:00 0.18it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - carpet model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9/9 0:00:08 • 0:00:00 2.30it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.6861958503723145     │
+│       image_F1Score       │    0.8585366010665894     │
+│        pixel_AUROC        │    0.9545040130615234     │
+│       pixel_F1Score       │    0.4516528844833374     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:15 • 0:00:00 0.20it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: grid
+Testing ResNet18 PaDiM - grid model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9/9 0:00:05 • 0:00:00 8.29it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.4168755114078522     │
+│       image_F1Score       │    0.8358209133148193     │
+│        pixel_AUROC        │     0.846672534942627     │
+│       pixel_F1Score       │    0.10496805608272552    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 0:00:09 • 0:00:00 0.21it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - grid model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9/9 0:00:04 • 0:00:00 7.86it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9415205121040344     │
+│       image_F1Score       │    0.9217391014099121     │
+│        pixel_AUROC        │    0.8947511911392212     │
+│       pixel_F1Score       │    0.14962776005268097    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 0:00:10 • 0:00:00 0.19it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: hazelnut
+Testing ResNet18 PaDiM - hazelnut model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13/13 0:00:10 • 0:00:00 2.37it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8174999952316284     │
+│       image_F1Score       │    0.8607594966888428     │
+│        pixel_AUROC        │    0.9715766906738281     │
+│       pixel_F1Score       │     0.509902834892273     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:23 • 0:00:00 0.13it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - hazelnut model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13/13 0:00:11 • 0:00:00 2.06it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9153571724891663     │
+│       image_F1Score       │    0.8676470518112183     │
+│        pixel_AUROC        │    0.9760432839393616     │
+│       pixel_F1Score       │    0.5269895792007446     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:20 • 0:00:00 0.14it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: leather
+Testing ResNet18 PaDiM - leather model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:05 • 0:00:00 14.35it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9144021272659302     │
+│       image_F1Score       │    0.8969072103500366     │
+│        pixel_AUROC        │    0.9878979921340942     │
+│       pixel_F1Score       │    0.39600032567977905    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:18 • 0:00:00 0.16it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - leather model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:05 • 0:00:00 18.92it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8084238767623901     │
+│       image_F1Score       │    0.8465116024017334     │
+│        pixel_AUROC        │    0.9679160118103027     │
+│       pixel_F1Score       │    0.42404308915138245    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:19 • 0:00:00 0.16it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: metal_nut
+Testing ResNet18 PaDiM - metal_nut model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:03 • 0:00:00 17.56it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9095796346664429     │
+│       image_F1Score       │          0.9375           │
+│        pixel_AUROC        │    0.9391154050827026     │
+│       pixel_F1Score       │     0.633101224899292     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:17 • 0:00:00 0.17it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - metal_nut model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:02 • 0:00:00 19.37it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.6881719827651978     │
+│       image_F1Score       │    0.8888888955116272     │
+│        pixel_AUROC        │    0.9485127925872803     │
+│       pixel_F1Score       │    0.6734439134597778     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:14 • 0:00:00 0.20it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: pill
+Testing ResNet18 PaDiM - pill model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9/9 0:00:04 • 0:00:00 6.99it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │     0.802509605884552     │
+│       image_F1Score       │    0.9297658801078796     │
+│        pixel_AUROC        │    0.9410640597343445     │
+│       pixel_F1Score       │     0.459055095911026     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6 0:00:31 • 0:00:00 0.16it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - pill model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9/9 0:00:04 • 0:00:00 6.24it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8000545501708984     │
+│       image_F1Score       │    0.9235880374908447     │
+│        pixel_AUROC        │    0.9487375617027283     │
+│       pixel_F1Score       │    0.5306689143180847     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6/6 0:00:31 • 0:00:00 0.16it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: screw
+Testing ResNet18 PaDiM - screw model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10/10 0:00:08 • 0:00:00 2.31it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.49600327014923096    │
+│       image_F1Score       │    0.8489208817481995     │
+│        pixel_AUROC        │    0.9510090351104736     │
+│       pixel_F1Score       │    0.15660633146762848    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:19 • 0:00:00 0.20it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - screw model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10/10 0:00:07 • 0:00:00 2.41it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.4644394814968109     │
+│       image_F1Score       │    0.8489208817481995     │
+│        pixel_AUROC        │    0.9746686816215515     │
+│       pixel_F1Score       │    0.17815379798412323    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:19 • 0:00:00 0.20it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: tile
+Testing ResNet18 PaDiM - tile model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:04 • 0:00:00 15.25it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │     0.91558438539505      │
+│       image_F1Score       │     0.907975435256958     │
+│        pixel_AUROC        │    0.8972421884536743     │
+│       pixel_F1Score       │    0.46118924021720886    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:15 • 0:00:00 0.20it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - tile model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:04 • 0:00:00 15.86it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9282106757164001     │
+│       image_F1Score       │    0.8969696760177612     │
+│        pixel_AUROC        │    0.9248489141464233     │
+│       pixel_F1Score       │    0.6077414155006409     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:13 • 0:00:00 0.22it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: toothbrush
+Testing ResNet18 PaDiM - toothbrush model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2/2 0:00:05 • 0:00:00 16.58it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │            1.0            │
+│       image_F1Score       │    0.9830508232116699     │
+│        pixel_AUROC        │     0.986687958240509     │
+│       pixel_F1Score       │    0.5612585544586182     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2/2 0:00:08 • 0:00:00 0.12it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - toothbrush model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2/2 0:00:04 • 0:00:00 2.00it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9999999403953552     │
+│       image_F1Score       │    0.9830508232116699     │
+│        pixel_AUROC        │    0.9916622638702393     │
+│       pixel_F1Score       │    0.6443496346473694     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2/2 0:00:08 • 0:00:00 0.12it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: transistor
+Testing ResNet18 PaDiM - transistor model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:06 • 0:00:00 15.34it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │     0.940000057220459     │
+│       image_F1Score       │    0.8767123222351074     │
+│        pixel_AUROC        │    0.9720611572265625     │
+│       pixel_F1Score       │    0.6493147611618042     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:24 • 0:00:00 0.12it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - transistor model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7/7 0:00:05 • 0:00:00 21.79it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8925000429153442     │
+│       image_F1Score       │    0.7792207598686218     │
+│        pixel_AUROC        │    0.9545226693153381     │
+│       pixel_F1Score       │    0.6546177268028259     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4/4 0:00:22 • 0:00:00 0.13it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: wood
+Testing ResNet18 PaDiM - wood model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:05 • 0:00:00 10.31it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9824561476707458     │
+│       image_F1Score       │    0.9579831957817078     │
+│        pixel_AUROC        │    0.9107055068016052     │
+│       pixel_F1Score       │    0.4172234535217285     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 0:00:15 • 0:00:00 0.13it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - wood model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:05 • 0:00:00 11.75it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.9807016849517822     │
+│       image_F1Score       │    0.9491525292396545     │
+│        pixel_AUROC        │    0.9298795461654663     │
+│       pixel_F1Score       │    0.4548695683479309     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3/3 0:00:16 • 0:00:00 0.12it/s 
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/torchvision/transforms/v2/_deprecated.py:42: UserWarning: The transform `ToTensor()` is deprecated and will be removed in a future release. Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`.Output is equivalent up to float precision.
+  warnings.warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/core/optimizer.py:183: `LightningModule.configure_optimizers` returned `None`, this fit will run with no optimizer
+Testing category: zipper
+Testing ResNet18 PaDiM - zipper model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │  2.8 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 2.8 M                                                         
+Non-trainable params: 0                                                         
+Total params: 2.8 M                                                             
+Total estimated model params size (MB): 11                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 69                                                        
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 69 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:04 • 0:00:00 15.59it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │     0.769432783126831     │
+│       image_F1Score       │    0.9069767594337463     │
+│        pixel_AUROC        │    0.9381595253944397     │
+│       pixel_F1Score       │    0.31318220496177673    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:13 • 0:00:00 0.30it/s 
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+`Trainer(val_check_interval=1.0)` was configured so validation will run at the end of the training epoch..
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+Testing Wide ResNet50-2 PaDiM - zipper model
+┏━━━┳━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name           ┃ Type          ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ pre_processor  │ PreProcessor  │      0 │ train │     0 │
+│ 1 │ post_processor │ PostProcessor │      0 │ train │     0 │
+│ 2 │ evaluator      │ Evaluator     │      0 │ train │     0 │
+│ 3 │ model          │ PadimModel    │ 24.9 M │ train │     0 │
+└───┴────────────────┴───────────────┴────────┴───────┴───────┘
+Trainable params: 24.9 M                                                        
+Non-trainable params: 0                                                         
+Total params: 24.9 M                                                            
+Total estimated model params size (MB): 99                                      
+Modules in train mode: 19                                                       
+Modules in eval mode: 174                                                       
+Total FLOPs: 0                                                                  
+/home/f74134118/anaconda3/envs/anomalib-env/lib/python3.10/site-packages/lightning/pytorch/loops/fit_loop.py:534: Found 174 module(s) in eval mode at the start of training. This may lead to unexpected behavior during training. If this is intentional, you can ignore this warning.
+`Trainer.fit` stopped: `max_epochs=1` reached.
+Epoch 0/0  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8/8 0:00:04 • 0:00:00 6.12it/s 
+The following callbacks returned in `LightningModule.configure_callbacks` will override existing callbacks passed to Trainer: Evaluator, ImageVisualizer, PostProcessor, PreProcessor
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│        image_AUROC        │    0.8121061325073242     │
+│       image_F1Score       │    0.9068825840950012     │
+│        pixel_AUROC        │    0.9181473851203918     │
+│       pixel_F1Score       │    0.21924179792404175    │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5/5 0:00:18 • 0:00:00 0.21it/s 
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| model                              |   image_AUROC |   image_F1Score |   pixel_AUROC |   pixel_F1Score |
++====================================+===============+=================+===============+=================+
+| ResNet18 PaDiM - General           |      0.643111 |        0.843697 |      0.814475 |        0.207233 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - General    |      0.659343 |        0.846963 |      0.830595 |        0.251444 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - bottle            |      0.988889 |        0.967742 |      0.97706  |        0.677548 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - bottle     |      0.983333 |        0.95935  |      0.975236 |        0.678901 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - cable             |      0.808658 |        0.818182 |      0.898444 |        0.390488 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - cable      |      0.777549 |        0.79803  |      0.95031  |        0.422532 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - capsule           |      0.867172 |        0.943231 |      0.980482 |        0.358222 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - capsule    |      0.838053 |        0.93913  |      0.972271 |        0.343857 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - carpet            |      0.867977 |        0.892308 |      0.974569 |        0.511801 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - carpet     |      0.686196 |        0.858537 |      0.954504 |        0.451653 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - grid              |      0.416876 |        0.835821 |      0.846673 |        0.104968 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - grid       |      0.941521 |        0.921739 |      0.894751 |        0.149628 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - hazelnut          |      0.8175   |        0.860759 |      0.971577 |        0.509903 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - hazelnut   |      0.915357 |        0.867647 |      0.976043 |        0.52699  |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - leather           |      0.914402 |        0.896907 |      0.987898 |        0.396    |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - leather    |      0.808424 |        0.846512 |      0.967916 |        0.424043 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - metal_nut         |      0.90958  |        0.9375   |      0.939115 |        0.633101 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - metal_nut  |      0.688172 |        0.888889 |      0.948513 |        0.673444 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - pill              |      0.80251  |        0.929766 |      0.941064 |        0.459055 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - pill       |      0.800055 |        0.923588 |      0.948738 |        0.530669 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - screw             |      0.496003 |        0.848921 |      0.951009 |        0.156606 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - screw      |      0.464439 |        0.848921 |      0.974669 |        0.178154 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - tile              |      0.915584 |        0.907975 |      0.897242 |        0.461189 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - tile       |      0.928211 |        0.89697  |      0.924849 |        0.607741 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - toothbrush        |      1        |        0.983051 |      0.986688 |        0.561259 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - toothbrush |      1        |        0.983051 |      0.991662 |        0.64435  |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - transistor        |      0.94     |        0.876712 |      0.972061 |        0.649315 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - transistor |      0.8925   |        0.779221 |      0.954523 |        0.654618 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - wood              |      0.982456 |        0.957983 |      0.910706 |        0.417223 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - wood       |      0.980702 |        0.949153 |      0.92988  |        0.45487  |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| ResNet18 PaDiM - zipper            |      0.769433 |        0.906977 |      0.93816  |        0.313182 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
+| Wide ResNet50-2 PaDiM - zipper     |      0.812106 |        0.906883 |      0.918147 |        0.219242 |
++------------------------------------+---------------+-----------------+---------------+-----------------+
