@@ -69,6 +69,10 @@ class DefaultAD(data.Dataset):
 		elif name in ['dcase-2020-spectrogram', 'dcase-2020-three-channel']:
 			meta_info = json.load(open(f'{self.root}/{cfg.data.meta}', 'r'))
 			meta_info = meta_info['id_00' if self.train else 'id_02']
+			# UAD: train on normal-only. mimii mixes normal + abnormal samples,
+			# so the abnormal ones must be filtered out before training
+			if self.train:
+				meta_info = {k: [s for s in v if s['anomaly'] == 0] for k, v in meta_info.items()}
 			self.cls_names = cfg.data.cls_names
 			if not isinstance(self.cls_names, list):
 				self.cls_names = [self.cls_names]
@@ -123,12 +127,15 @@ class DefaultAD(data.Dataset):
 				meta_info[cls_name] = data_cls_all
 
 		for cls_name in self.cls_names:
-			# use ratio
+			# use ratio (train only): never sub-sample the test split, or a class with
+			# contiguous samples in the list can vanish entirely -> single-class test
+			# set -> NaN AUROC.
 			cls_data = meta_info[cls_name]
-			try:
-				cls_data = cls_data[:int(len(cls_data) * cfg.ratio)]
-			except AttributeError:
-				pass
+			if self.train:
+				try:
+					cls_data = cls_data[:int(len(cls_data) * cfg.ratio)]
+				except AttributeError:
+					pass
 			self.data_all.extend(cls_data)
 		random.shuffle(self.data_all) if self.train else None
 		self.length = len(self.data_all)
