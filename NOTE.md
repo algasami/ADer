@@ -22,3 +22,8 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 - swap layer normalization to AdaLN, for both PaDiM and mambaAD
 - all changes: resnet, adaLN or not, FiLM or not
 - copy PaDiM modify AdaLN, FiLM
+
+## 6/17, 2026
+
+- Fixed ratio issue (introduced anomalous images into training)
+- Fixed testing set influenced by ratio (shouldn't)
