@@ -75,7 +75,13 @@ class Evaluator(object):
         # anomalys = results['anomalys'][idxes]
         # normalization for pixel-level evaluations
         pr_px_norm = (pr_px - pr_px.min()) / (pr_px.max() - pr_px.min())
-        gt_sp = gt_px.max(axis=(1, 2))
+        # * Edit *
+        # sample-level GT comes from the image-level anomaly label
+        # datasets with image-level-only labels (e.g. MIMII) have empty masks
+        # gt_px.max() collapse to all-normal, then single-class, then NaN AUROC, for
+        # mask-based datasets (MVTec) the label equals gt_px.max(), so the og is fine
+        # but it fails on MIMII
+        gt_sp = results['anomalys'][idxes].astype(int)
         if self.pooling_ks is not None:
             pr_px_pooling = F.avg_pool2d(torch.tensor(pr_px).unsqueeze(1), self.pooling_ks, stride=1).numpy().squeeze(1)
             pr_sp_max = pr_px_pooling.max(axis=(1, 2))
