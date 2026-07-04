@@ -68,7 +68,7 @@ class DefaultAD(data.Dataset):
 			self.cls_names = list(meta_info.keys()) if len(self.cls_names) == 0 else self.cls_names
 		elif name in ['dcase-2020-spectrogram', 'dcase-2020-three-channel']:
 			meta_info = json.load(open(f'{self.root}/{cfg.data.meta}', 'r'))
-			meta_info = meta_info['id_00' if self.train else 'id_02']
+			meta_info = meta_info['train' if self.train else 'test']
 			# UAD: train on normal-only. mimii mixes normal + abnormal samples,
 			# so the abnormal ones must be filtered out before training
 			if self.train:
