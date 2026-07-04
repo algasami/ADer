@@ -8,7 +8,7 @@ class MIMIIToySolver(object):
     def __init__(self, root):
         self.root = root
         self.meta_path = f'{root}/meta.json'
-        self.phases = ['id_00', 'id_02', 'id_04', 'id_06']
+        self.phases = ['test', 'train']
         self.CLSNAMES = self.CLSNAMES_2D
 
     def run(self):
@@ -39,5 +39,5 @@ class MIMIIToySolver(object):
 
 # Good! Run me to generate toy meta.json for MIMII dataset. The meta.json will be used by the benchmark.
 if __name__ == '__main__':
-    runner = MIMIIToySolver(root='data/dcase-2020-three-channel')
+    runner = MIMIIToySolver(root='data/dcase-2020-spectrogram')
     runner.run()
