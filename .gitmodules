@@ -1,3 +1,6 @@
 [submodule "MambaAD"]
 	path = MambaAD
 	url = https://github.com/algasami/MambaAD.git
+[submodule "STgram-MFN"]
+	path = STgram-MFN
+	url = https://github.com/liuyoude/STgram-MFN.git
