@@ -27,3 +27,9 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 
 - Fixed ratio issue (introduced anomalous images into training)
 - Fixed testing set influenced by ratio (shouldn't)
+- Look into STgram-MFN (SOTA?)
+- pauc (dcase-2020-spectrogram)
+
+## 6/30, 2026
+
+- STgram-MFN for audio AD baseline
