@@ -33,3 +33,9 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 ## 6/30, 2026
 
 - STgram-MFN for audio AD baseline
+
+## 7/8, 2026
+
+- ArcFace replaced by KNN - physical properties
+- TgramNet to construct STgram for MambaAD?
+- STgram-MFN baseline classifier replaced by MambaAD
