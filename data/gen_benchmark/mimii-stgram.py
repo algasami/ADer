@@ -1,8 +1,9 @@
 import os
+import sys
 import json
 
 
-class MIMIIToySolver(object):
+class MIMIIStgramSolver(object):
     CLSNAMES_2D = ['fan', 'pump', 'slider', 'valve', 'ToyCar', 'ToyConveyor']
 
     def __init__(self, root):
@@ -37,7 +38,9 @@ class MIMIIToySolver(object):
             f.write(json.dumps(info, indent=4) + "\n")
 
 
-# Good! Run me to generate toy meta.json for MIMII dataset. The meta.json will be used by the benchmark.
+# generate meta.json for an STgram dataset root. Pass the root as an arg to target other dataset
 if __name__ == '__main__':
-    runner = MIMIIToySolver(root='data/dcase-2020-spectrogram')
+    root = sys.argv[1] if len(sys.argv) > 1 else 'data/dcase-2020-stgram'
+    runner = MIMIIStgramSolver(root=root)
     runner.run()
+    print(f'Wrote {runner.meta_path}')
