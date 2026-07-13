@@ -39,3 +39,15 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 - ArcFace replaced by KNN - physical properties
 - TgramNet to construct STgram for MambaAD?
 - STgram-MFN baseline classifier replaced by MambaAD
+
+## 7/13, 2026
+
+- noticed training divergence in all three runs toy / stgram / stgram_delta:
+  student weights (`mff_oce` convs, `A_logs`) grew steadily under constant lr=0.005 (step decay
+  only at epoch 800) until overflow -> NaN (toy @ ~ep499, stgram @ ~ep599, stgram_delta @ ~ep399).
+  surfaced later as sklearn "Input contains NaN" during test.
+- root causes fixed:
+  - loss never logged - configs logged term `cos` but trainer updates `pixel`
+    (`update_log_term` silently no-ops on missing terms). renamed to `pixel` in the three configs.
+  - added non-finite loss/grad guard so divergence can no longer silently contaminate weights.
+- added `make_resume_ckpt.py`: rebuilds a resume ckpt from a finite `net_<epoch>.pth` snapshot.

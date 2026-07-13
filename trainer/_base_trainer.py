@@ -140,10 +140,26 @@ class BaseTrainer():
             self.loss_scaler(loss_term, optim, clip_grad=self.cfg.loss.clip_grad, parameters=self.net.parameters(),
                              create_graph=self.cfg.loss.create_graph)
         else:
+            if not torch.isfinite(loss_term):
+                self._skip_nonfinite_step(f'loss={loss_term.item()}')
+                return
             loss_term.backward(retain_graph=self.cfg.loss.retain_graph)
             if self.cfg.loss.clip_grad is not None:
-                dispatch_clip_grad(self.net.parameters(), value=self.cfg.loss.clip_grad)
+                grad_norm = torch.nn.utils.clip_grad_norm_(self.net.parameters(), self.cfg.loss.clip_grad)
+                if not torch.isfinite(grad_norm):
+                    self._skip_nonfinite_step(f'grad_norm={grad_norm.item()}')
+                    return
+            self._nonfinite_streak = 0
             optim.step()
+
+    def _skip_nonfinite_step(self, detail, max_streak=100):
+        self._nonfinite_streak = getattr(self, '_nonfinite_streak', 0) + 1
+        log_msg(self.logger,
+                f'WARNING: non-finite {detail} at iter {self.iter}; skipping optimizer step '
+                f'(streak {self._nonfinite_streak})')
+        if self._nonfinite_streak >= max_streak:
+            raise RuntimeError(
+                f'training diverged: {self._nonfinite_streak} consecutive non-finite steps (last: {detail})')
 
     def optimize_parameters(self):
         pass
