@@ -3,6 +3,7 @@ import copy
 import glob
 import shutil
 import datetime
+import math
 import traceback
 import tabulate
 import torch
@@ -161,6 +162,32 @@ class BaseTrainer():
             raise RuntimeError(
                 f'training diverged: {self._nonfinite_streak} consecutive non-finite steps (last: {detail})')
 
+    @torch.no_grad()
+    def _log_weight_stats(self, max_w_warn=100., max_buf_warn=1e5):
+        # warn thresholds sit well below the divergence signature observed on MIMII
+        # (trainable max|w| reached ~584 and running_var ~1.5e6 before cosloss nan'd)
+        if not self.master:
+            return
+        max_w, sq_sum = 0., 0.
+        for p in self.net.parameters():
+            if p.requires_grad and p.numel() > 0:
+                max_w = max(max_w, p.abs().max().item())
+                sq_sum += p.pow(2).sum().item()
+        max_buf = 0.
+        for b in self.net.buffers():
+            if b.is_floating_point() and b.numel() > 0:
+                max_buf = max(max_buf, b.abs().max().item())
+        l2 = sq_sum ** 0.5
+        msg = f'weight stats @ epoch {self.epoch}: max|w| {max_w:.3e} | L2 {l2:.3e} | max|buf| {max_buf:.3e}'
+        if not all(map(math.isfinite, (max_w, l2, max_buf))) or max_w > max_w_warn or max_buf > max_buf_warn:
+            msg = (f'WARNING: weight-norm growth — {msg} (threshold max|w| {max_w_warn:.0e} / '
+                   f'max|buf| {max_buf_warn:.0e}; raise weight_decay or lower lr before CosLoss overflows)')
+        log_msg(self.logger, msg)
+        if self.writer:
+            self.writer.add_scalar('Train/max_w', max_w, self.iter)
+            self.writer.add_scalar('Train/param_l2', l2, self.iter)
+            self.writer.add_scalar('Train/max_buffer', max_buf, self.iter)
+
     def optimize_parameters(self):
         pass
 
@@ -254,6 +281,7 @@ class BaseTrainer():
                     datetime.timedelta(seconds=int(self.cfg.total_time / self.epoch * (self.epoch_full - self.epoch))))
                 log_msg(self.logger,
                         f'==> Total time: {total_time_str}\t Eta: {eta_time_str} \tLogged in \'{self.cfg.logdir}\'')
+                self._log_weight_stats()
                 self.save_checkpoint()
                 self.reset(isTrain=True)
                 self.train_loader.sampler.set_epoch(int(self.epoch)) if self.cfg.dist else None

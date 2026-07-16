@@ -52,7 +52,16 @@ class CosLoss(nn.Module):
         loss = 0
         for in1, in2 in zip(input1, input2):
             if self.flat:
-                loss += (1 - self.cos_sim(in1.contiguous().view(in1.shape[0], -1), in2.contiguous().view(in2.shape[0], -1))).mean() * self.lam
+                v1 = in1.contiguous().view(in1.shape[0], -1)
+                v2 = in2.contiguous().view(in2.shape[0], -1)
+                # previously on ader's fork,
+                # cosine is scale-invariant, so dividing both vectors by the same per-sample
+                # constant leaves loss and gradients mathematically unchanged. it keeps the
+                # sum-of-squares inside the norm within fp32 range when activations are large
+                # hardened cosloss
+                scale = torch.maximum(v1.abs().amax(dim=1, keepdim=True),
+                                      v2.abs().amax(dim=1, keepdim=True)).clamp(min=1e-30).detach()
+                loss += (1 - self.cos_sim(v1 / scale, v2 / scale)).mean() * self.lam
             else:
                 loss += (1 - self.cos_sim(in1.contiguous(), in2.contiguous())).mean() * self.lam
         return loss / len(input1) if self.avg else loss

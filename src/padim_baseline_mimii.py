@@ -20,7 +20,9 @@ CATEGORIES = (
     "fan",
     "pump",
     "slider",
-    "valve"
+    "valve",
+	"ToyConveyor",
+	"ToyCar",
 )
 patched_dm = MIMIIAnomalibDataModule(
 	root="../data/dcase-2020-spectrogram",
