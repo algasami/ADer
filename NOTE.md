@@ -51,3 +51,34 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
     (`update_log_term` silently no-ops on missing terms). renamed to `pixel` in the three configs.
   - added non-finite loss/grad guard so divergence can no longer silently contaminate weights.
 - added `make_resume_ckpt.py`: rebuilds a resume ckpt from a finite `net_<epoch>.pth` snapshot.
+
+## 7/22, 2026
+
+- **lr/wd verdict (lowlr_lowwd_20260721 runs, lr 1e-3 / wd 1e-4, 200 ep):** stable (0 non-finite
+  guard hits, flat curves) but underfit. Divergence was a long-schedule (1000-ep, decay@800) problem.
+  The 200-ep 5e-3 runs never diverge. Also lowering wd 100x is the wrong lever for divergence.
+  Best trained config so far = **5e-3 / 0.01 / 200 ep** + best-epoch selection (peak ~ep10-20).
+- **Frozen-encoder probe now run on all 3 representations — encoder EXONERATED across the board.**
+  Best frozen scorer (maha_concat, no decoder training): toy 71.8 / stgram 68.4 / delta 66.6 —
+  each BEATS its trained MambaAD peak by +6.2 / +5.6 / +8.3. The reconstruction-distillation
+  decoder + sp readout is the ceiling, not the ResNet34 encoder or the input representation.
+  - signal is global: pooled maha/knn beat PatchCore-style `patch` by ~8-11 pts in every
+    rep; yet default readout is sp_max (per-pixel max). sp_mean already > sp_max in trained runs.
+  - per-class: only `slider` separates well everywhere (82-90); STgram lifts `fan` at encoder level
+    (knn_layer1 ~71) but the trained decoder loses it.
+- **Next (decoder-gap investigation):** re-score the "trained student" features with the same
+  Maha/kNN probe. If trained-student+Maha ~= frozen-teacher+Maha -> only the cosine-residual
+  readout is bad (cheap fix: swap readout). If trained-student+Maha << frozen -> decoder distorts
+  the manifold (architectural). This bisects the downstream ceiling.
+
+- Decoder-gap BISECTED (student_feature_probe.py, 720 net_20.pth peak ckpts):
+  Scoring the trained Mamba *student's* GAP features with the same Maha as the
+  frozen probe lands within ~1 pt of the teacher (decoder preserves the manifold):
+  | rep | teacher+Maha | student+Maha | native residual sp_max | residual sp_mean |
+  |-----|-----|-----|-----|-----|
+  | toy          | 71.8 | 70.6 | 64.4 | 68.7 |
+  | stgram       | 68.4 | 67.2 | 61.1 | 63.2 |
+  | stgram_delta | 66.6 | 66.1 | 56.4 | 61.4 |
+  The `1-cos(ft,fs)` residual + sp_max readout is 6-10 pts below the student's own separability.
+  Also: student+Maha ~= teacher+Maha means the trained decoder adds ~0 under a Maha readout. The
+  simplest strong pipeline is frozen teacher + Maha (71.8), no MambaAD training at all.
