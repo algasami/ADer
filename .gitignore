@@ -5,3 +5,4 @@ data/dcase-2020*
 src/results
 *.zip
 tmp
+nohup_logs
