@@ -33,12 +33,19 @@ from timm.utils import dispatch_clip_grad
 from ._base_trainer import BaseTrainer
 from . import TRAINER
 from util.vis import vis_rgb_gt_amp
+from util.scorer import get_scorer
 
 
 @TRAINER.register_module
 class MAMBAADTrainer(BaseTrainer):
     def __init__(self, cfg):
         super(MAMBAADTrainer, self).__init__(cfg)
+        # test-time score readout (default cos-residual if the config sets no `scorer`)
+        self.scorer = get_scorer(getattr(cfg, 'scorer', None))
+        if getattr(self.scorer, 'needs_fit', False) and cfg.dist:
+            log_msg(self.logger, f'WARNING: scorer {self.scorer.__class__.__name__} fits a '
+                    f'per-class bank that is NOT gathered across DDP ranks; run single-GPU for '
+                    f'correct numbers.')
 
     def set_input(self, inputs):
         self.imgs = inputs['img'].cuda()
@@ -119,11 +126,35 @@ class MAMBAADTrainer(BaseTrainer):
     #     self._finish()
 
     @torch.no_grad()
+    def _fit_scorer(self):
+        """Fit a fit-requiring scorer (Maha/kNN) on the normal-only train split before scoring.
+        Static (frozen-teacher) scorers are fitted once and reused across test epochs."""
+        if getattr(self.scorer, 'static_fit', False) and getattr(self, '_scorer_fit_done', False):
+            return
+        was_training = self.net.training
+        self.net.eval()
+        self.scorer.reset()
+        fit_length = self.cfg.data.train_size
+        fit_loader = iter(self.train_loader)
+        for i in range(fit_length):
+            data = next(fit_loader)
+            feats_t, feats_s = self.net(data['img'].cuda())
+            self.scorer.fit_batch(feats_t, feats_s, np.array(data['cls_name']))
+            print(f'\r[scorer-fit] {i + 1}/{fit_length}', end='') if self.master else None
+        self.scorer.finalize_fit()
+        self._scorer_fit_done = True
+        self.net.train(mode=was_training)
+        log_msg(self.logger, f'\n==> Fitted {self.scorer.__class__.__name__} '
+                             f'(source={getattr(self.scorer, "source", "-")}) on normal train split')
+
+    @torch.no_grad()
     def test(self):
         if self.master:
             if os.path.exists(self.tmp_dir):
                 shutil.rmtree(self.tmp_dir)
             os.makedirs(self.tmp_dir, exist_ok=True)
+        if getattr(self.scorer, 'needs_fit', False):
+            self._fit_scorer()
         self.reset(isTrain=False)
         imgs_masks, anomaly_maps, cls_names, anomalys, sample_anomalys, sample_predicts = [], [], [], [], [], []
         batch_idx = 0
@@ -140,10 +171,9 @@ class MAMBAADTrainer(BaseTrainer):
             loss_cos = self.loss_terms['cos'](self.feats_t, self.feats_s)
             update_log_term(self.log_terms.get('cos'), reduce_tensor(loss_cos, self.world_size).clone().detach().item(),
                             1, self.master)
-            # get anomaly maps
-            anomaly_map, _ = self.evaluator.cal_anomaly_map(self.feats_t, self.feats_s,
-                                                            [self.imgs.shape[2], self.imgs.shape[3]], uni_am=False,
-                                                            amap_mode='add', gaussian_sigma=4)
+            # get anomaly maps via the configured score readout (default: cosine residual)
+            anomaly_map = self.scorer.score_batch(self.feats_t, self.feats_s, np.array(self.cls_name),
+                                                  [self.imgs.shape[2], self.imgs.shape[3]])
             # self.imgs_mask[self.imgs_mask > 0.], self.imgs_mask[self.imgs_mask <= 0.] = 1, 0
             self.imgs_mask[self.imgs_mask > 0.5], self.imgs_mask[self.imgs_mask <= 0.5] = 1, 0
             if self.cfg.vis:

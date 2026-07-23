@@ -63,6 +63,17 @@ python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --node_rank=0 \
   - input-type: `log-Mel` (`data/dcase-2020-spectrogram`), `stgram`, `stgram-delta`.
   - scan-type ablation (log-Mel + e50, varying scan curve): `mimii/scan-type/{hilbert,scan,
     sweep,zigzag,zorder}.py` (`hilbert` == the `e50/log-Mel` baseline).
+  - scorer-type ablation (log-Mel + e50, varying the *test-time score readout*):
+    `mimii/scorer/{cos-residual,student-maha,student-knn,teacher-maha,teacher-knn}.py`
+    (`cos-residual` == the native `e50/log-Mel` readout). The scorer is orthogonal to
+    training — the loss/checkpoint are unchanged; only how features are turned into a per-clip
+    score differs. So the cleanest use is `-m test` with `model.kwargs.checkpoint_path=<net.pth>`
+    re-scoring one trained checkpoint several ways. Motivated by the student/frozen probes:
+    Maha/kNN on GAP features beat the cosine-residual sp_max/sp_mean readout (see the decoder-gap
+    finding). Engine: `util/scorer.py` (`SCORER` registry); knob: `ABL_SCORER` in `mimii/_base.py`.
+    Maha/kNN fit a per-class bank on the normal train split (one extra forward pass per eval) —
+    **run single-GPU** (the bank is not gathered across DDP ranks); image-level scorers make
+    sp_max == sp_mean by construction (both metric columns report the same number).
 - Visualization: add `vis=True vis_dir=<dir>` to a test run.
 - Single-class sweep helper: `runs_single_class.py` (`-d <dataset> -c <cfg> -n <num_procs> -m <mode> -g <gpu>`).
 - PaDiM baseline (anomalib track, *not* `run.py`): `cd src && python padim_baseline.py`
@@ -120,6 +131,15 @@ student, trained with **`CosLoss` under log-term name `cos`**. The base trainer 
 **Metrics:** two pooling families over the anomaly map (`util/metric.py`) — `*_sp_max` (max over
 pixels) and `*_sp_mean` (mean). Current MIMII configs record both (6 metrics, 42-column
 `metric.txt`); older runs recorded sp_max only (21 columns).
+
+**Scorer (test-time readout):** `util/scorer.py` — a `SCORER` registry decoupling *how a
+per-clip anomaly score is produced* from the metrics that consume it. `CosResidualScorer` is the
+native path (per-pixel `1-cos(ft,fs)` map, wrapping `Evaluator.cal_anomaly_map` — the default when
+a config sets no `cfg.scorer`, so non-MIMII configs are unaffected). `MahaScorer`/`KNNScorer`
+(`source='student'|'teacher'`) fit a per-class bank on GAP features of the normal train split and
+emit an image-level score broadcast to a constant map. `MAMBAADTrainer` builds it via `get_scorer`,
+runs `_fit_scorer()` before `test()` when `needs_fit`, and calls `score_batch` in the test loop.
+Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
 
 ## Audio-specific customizations vs. stock ADer
 
