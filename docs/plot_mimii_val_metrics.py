@@ -44,6 +44,8 @@ FAMILIES = {
 _LONG = "runs/MAMBAADTrainer_MambaAD_configs_mambaad_mambaad_mimii_{}_20260716-{}"
 _SHORT = "runs/MAMBAADTrainer_MambaAD_configs_mambaad_mambaad_mimii_{}_20260720-{}"
 _LOWLR = "runs/MAMBAADTrainer_MambaAD_configs_mambaad_mambaad_mimii_{}_latest_lowlr_lowwd_20260721"
+# super-short 50-epoch runs (20260722): each rep has its own launch timestamp.
+_SUPERSHORT = "runs/MAMBAADTrainer_MambaAD_configs_mambaad_mambaad_mimii_{}_20260722-{}"
 
 # Each preset fully describes one figure set. `runs` maps a legend label -> run directory.
 # `file` maps a metric family -> the filename (within each run dir) that holds it.
@@ -85,6 +87,19 @@ PRESETS = {
         out="docs/lowlr-lowwd-plots",
         xmax=200,
         title="MambaAD / MIMII (low lr, low wd, 200 ep)",
+        avg_note="(open ring = peak)",
+    ),
+    "supershort": dict(
+        runs={
+            "STgram+Sgram": _SUPERSHORT.format("stgram", "215109"),
+            "STgram+delta": _SUPERSHORT.format("stgram_delta", "215108"),
+            "log-Mel x3":   _SUPERSHORT.format("toy", "215044"),
+        },
+        # super-short runs record all 6 metrics natively, so both families live in metric.txt.
+        file={"sp_max": "metric.txt", "sp_mean": "metric.txt"},
+        out="docs/supershort-epoch-plots",
+        xmax=50,
+        title="MambaAD / MIMII (super-short schedule, 50 ep)",
         avg_note="(open ring = peak)",
     ),
 }
