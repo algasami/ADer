@@ -82,3 +82,30 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
   The `1-cos(ft,fs)` residual + sp_max readout is 6-10 pts below the student's own separability.
   Also: student+Maha ~= teacher+Maha means the trained decoder adds ~0 under a Maha readout. The
   simplest strong pipeline is frozen teacher + Maha (71.8), no MambaAD training at all.
+
+## 7/23, 2026
+
+- **Scorer ablation promoted from one-off probe to a config/registry knob and swept over ALL
+  epochs.** The `mimii/scorer/{cos-residual,student-maha,student-knn,teacher-maha,teacher-knn}`
+  readouts were re-scored on the single e50 x log-Mel run (`...toy_20260722-215044`, net_2..50)
+  via `docs/run_scorer_ablation.sh` (reuses `reeval_sp_mean.py`: same trained decoder at every
+  saved epoch). cos-residual reproduces the native `metric.txt` to |Δ|=5e-4. Avg AUROC (sp_max):
+  | scorer | start(ep2) | peak | final(ep50) |
+  |-----|-----|-----|-----|
+  | cos-residual (native) | 59.6 | **64.7** @ep10 | 62.0 |
+  | student-maha          | 68.3 | **72.5** @ep40 | 72.3 |
+  | student-knn           | 67.5 | **70.7** @ep48 | 70.7 |
+  | teacher-maha (frozen) | 71.8 | **71.8** flat  | 71.8 |
+  | teacher-knn  (frozen) | 71.5 | **71.5** flat  | 71.5 |
+  - **All three distance readouts beat cos-residual by ~6-8 pts** — confirms the decoder-gap
+    finding (the `1-cos` residual + sp pooling is the bottleneck, not the features).
+  - **Refinement of "frozen beats trained":** scanning all epochs, student-maha (72.5@ep40)
+    *edges past* the flat teacher-maha ceiling (71.8) — the earlier net_20-only probe (70.6 < 71.8)
+    undersold the decoder. Given enough epochs + a Maha readout, the trained decoder adds a hair
+    rather than zero; the student curve rises monotonically while cos-residual peaks ~ep10 then
+    decays (its AUROC-peaks-early behaviour is a readout artifact, not a feature one).
+  - teacher scorers are checkpoint-independent (frozen encoder, `static_fit`) -> flat lines.
+    Maha edges kNN everywhere; sp_max == sp_mean for all image-level (Maha/kNN) scorers.
+  - Outputs: `docs/plots/mimii_scorer/` — one folder per figure holding BOTH `plot.png` and its
+    `data.csv`, plus `scorer_summary.csv` (peak/own-peak/final AUROC + AP/F1, both families) and
+    `_data/<scorer>.txt` (42-col epoch-aligned metric files). Both sp_max and sp_mean families.

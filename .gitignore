@@ -6,3 +6,4 @@ src/results
 *.zip
 tmp
 nohup_logs
+*.rawlog
