@@ -124,8 +124,12 @@ pixels) and `*_sp_mean` (mean). Current MIMII configs record both (6 metrics, 42
 ## Audio-specific customizations vs. stock ADer
 
 - Dataset roots `dcase-2020-spectrogram` / `dcase-2020-three-channel` / `dcase-2020-stgram` /
-  `dcase-2020-stgram-delta` are special-cased in `data/ad_dataset.py:69` — splits are
-  **machine-ID phases** `id_00` (train) / `id_02` (test), not `train`/`test`.
+  `dcase-2020-stgram-delta` are special-cased in `data/ad_dataset.py:69`. Layout is the standard
+  `<cls>/{train,test}/{normal,abnormal}/*.png` split (all machine IDs — `id_00/id_02/id_04/id_06`
+  — pooled into both splits; the ID is only in the filename). The special-case exists because the
+  `train` split may still contain `abnormal` samples, which are **filtered out at load time** so
+  training stays normal-only (UAD). (Legacy note: an older layout used machine-ID phases `id_00`
+  train / `id_02` test — that is no longer the case.)
 - Encoder is `resnet34` (stock image MambaAD uses `wide_resnet50_2`); local weights at
   `model/pretrain/resnet34-43635321.pth`.
 - `meta.json` schema is shared across datasets: per-split → per-class list of
