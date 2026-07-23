@@ -41,9 +41,9 @@ Audio: `librosa`. Baseline track: `anomalib`, `faiss-gpu`.
 ## Common commands
 
 ```bash
-# Train / test MambaAD on MIMII (single GPU); swap the config for stgram / stgram_delta
-CUDA_VISIBLE_DEVICES=0 python run.py -c MambaAD/configs/mambaad/mambaad_mimii_toy.py -m train
-CUDA_VISIBLE_DEVICES=0 python run.py -c MambaAD/configs/mambaad/mambaad_mimii_stgram.py -m test
+# Train / test MambaAD on MIMII (single GPU); swap the leaf for stgram / stgram-delta
+CUDA_VISIBLE_DEVICES=0 python run.py -c MambaAD/configs/mambaad/mimii/e50/log-Mel.py -m train
+CUDA_VISIBLE_DEVICES=0 python run.py -c MambaAD/configs/mambaad/mimii/e50/stgram.py -m test
 
 # Config overrides = trailing path.key=value args (parsed by run.py's REMAINDER opts)
 python run.py -c <cfg> -m train data.cls_names=pump trainer.checkpoint=runs/my_run
@@ -53,8 +53,16 @@ python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --node_rank=0 \
   --master_addr=127.0.0.1 --master_port=12315 --use_env run.py -c <cfg> -m train
 ```
 
-- MIMII configs: `mambaad_mimii_toy.py` (log-Mel), `mambaad_mimii_stgram.py`,
-  `mambaad_mimii_stgram_delta.py`; scan-type ablations: `..._toy_{scan,zigzag,zorder,sweep}.py`.
+- MIMII configs live under `MambaAD/configs/mambaad/mimii/<ablation-type>/<input-type>.py`.
+  All leaves are thin subclasses of `mimii/_base.py` (`cfg_mimii_base`) that only flip the
+  ablation knobs (`ABL_EPOCH`/`ABL_LR_BASE`/`ABL_WD`/`ABL_METRICS`), the input representation
+  (`INPUT_ROOT`), and/or the scan curve (`SCAN_TYPE`).
+  - ablation-type: `e50` (super-short, lr 5e-3/wd 0.01 — current default), `e200`
+    (lr 5e-3/wd 0.01), `e1000` (long schedule, decay@800, sp_max-only 21-col metrics),
+    `lowlr-lowwd` (lr 1e-3/wd 1e-4, 200 ep — stable but underfit).
+  - input-type: `log-Mel` (`data/dcase-2020-spectrogram`), `stgram`, `stgram-delta`.
+  - scan-type ablation (log-Mel + e50, varying scan curve): `mimii/scan-type/{hilbert,scan,
+    sweep,zigzag,zorder}.py` (`hilbert` == the `e50/log-Mel` baseline).
 - Visualization: add `vis=True vis_dir=<dir>` to a test run.
 - Single-class sweep helper: `runs_single_class.py` (`-d <dataset> -c <cfg> -n <num_procs> -m <mode> -g <gpu>`).
 - PaDiM baseline (anomalib track, *not* `run.py`): `cd src && python padim_baseline.py`
