@@ -7,3 +7,4 @@ src/results
 tmp
 nohup_logs
 *.rawlog
+.claude/worktrees/
