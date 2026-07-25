@@ -112,6 +112,22 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 
 ## 7/25, 2026
 
+- **Scan-geometry ablation swept over all epochs, re-scored with the winning student-Maha readout
+  (`mimii/scan-type-maha/*.py`, `docs/run_scan_ablation.sh` + `docs/plot_scan_ablation.py`).**
+  Trained one e50 x log-Mel run per scan curve (hilbert/zorder/scan/sweep/zigzag), then re-scored
+  every `net_<E>.pth` with `MahaScorer/student`. Avg AUROC @ avg-peak (ep40-50):
+  | scan | Avg AUROC | peak ep |
+  |-----|-----|-----|
+  | zorder | **72.60** | 40 |
+  | zigzag | 72.59 | 44 |
+  | hilbert (baseline) | 72.54 | 40 |
+  | scan | 72.47 | 40 |
+  | sweep | 72.07 | 50 |
+  - **Scan geometry is a non-lever: 0.5-pt spread across all 5 curves.** Even under the good Maha
+    readout the decoder's scan order does not matter. Per-class picture unchanged: slider strong
+    (~90), pump/valve/ToyCar middling (~72-75), fan/ToyConveyor weak (~58/65). Peaks-early still
+    holds (~ep40). Outputs: `docs/plots/mimii_scan/` (`scan_summary.csv` + per-figure folders).
+
 - **Backbone-swap probe — the last untested lever (`diagnostics/audio_backbone_probe.py`).**
   All downstream fronts (schedule/scan/scorer/decoder) were flat or a fixed +6; the remaining
   variable was the *feature extractor*. Swapped the frozen ImageNet ResNet34 for an
@@ -140,3 +156,10 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
     STgram-image *shallow tap* `knn_layer1` reaches ~71.4 — fragile/tap-dependent, still −16 vs 87.)
   - Outputs: `runs/audio_probe/{ast,cnn14}/auroc.csv` + `run.log`. Deps added: `panns_inference`,
     `torchlibrosa` (env `mamba-ad`); `transformers` already present for AST. Both run single-GPU.
+
+- **Campaign consolidated into `docs/ABLATION_SUMMARY.md`** (all fronts in one place: lever table,
+  gap decomposition 71.8 → +5 AST → +14 objective → 90.7 STgram-MFN, per-class ceilings). Bottom
+  line: the input-representation question is answered as a **negative result** — the downstream
+  pipeline plateaus at ~72; the two remaining levers with headroom are the backbone (banked: AST
+  +5) and, dominantly, the **learning objective** (supervised machine-ID discrimination, +14), a
+  new training track rather than an ablation of the existing one.

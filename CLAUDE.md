@@ -10,12 +10,19 @@ MIMII recordings are pre-converted to 3-channel PNGs which flow through the othe
 image AD engine. Baselines for comparison: PaDiM (anomalib track) and STgram-MFN (submodule).
 
 The active research question is which input representation works best. Three ablation fronts:
-- **log-Mel toy**: (log-Mel, delta, delta-delta) → `data/dcase-2020-three-channel`
+- **log-Mel toy**: (log-Mel, delta, delta-delta) → `data/dcase-2020-spectrogram`
 - **STgram-Sgram**: (Sgram, learned Tgram, Sgram) → `data/dcase-2020-stgram`
 - **STgram-delta**: (Sgram, learned Tgram, delta) → `data/dcase-2020-stgram-delta`
 
 The Tgram channel comes from a **frozen TgramNet** (weights from the STgram-MFN baseline
 checkpoint). Full design rationale: `docs/stgram-mambaad/PLAN.md`.
+
+> **Status (2026-07-25): the input-representation question is answered, and it's a negative
+> result.** No representation, decoder, scan curve, or schedule moves the needle — every
+> downstream lever plateaus at ~72 AUROC. log-Mel actually *beats* both STgram variants. The
+> only downstream lever that helps is the test-time readout (Maha, +6–8); the only feature lever
+> is the backbone (AST, +5); the dominant remaining gap to STgram-MFN (−14) is the *learning
+> objective*, not the encoder or input. Full write-up: **`docs/ABLATION_SUMMARY.md`**.
 
 ### Three code surfaces coexist — keep them straight
 - **Root ADer engine** (`run.py`, `configs/`, `model/`, `trainer/`, `data/`, `loss/`, `optim/`,
@@ -36,7 +43,8 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/envs/mamba-ad/lib
 ```
 
 Mamba deps: `mamba_ssm`, `causal_conv1d`, `triton`, `numpy-hilbert-curve`, `pyzorder`.
-Audio: `librosa`. Baseline track: `anomalib`, `faiss-gpu`.
+Audio: `librosa`. Baseline track: `anomalib`, `faiss-gpu`. Audio-backbone probe:
+`panns_inference`, `torchlibrosa`, `transformers` (AST).
 
 ## Common commands
 
@@ -62,7 +70,10 @@ python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --node_rank=0 \
     `lowlr-lowwd` (lr 1e-3/wd 1e-4, 200 ep — stable but underfit).
   - input-type: `log-Mel` (`data/dcase-2020-spectrogram`), `stgram`, `stgram-delta`.
   - scan-type ablation (log-Mel + e50, varying scan curve): `mimii/scan-type/{hilbert,scan,
-    sweep,zigzag,zorder}.py` (`hilbert` == the `e50/log-Mel` baseline).
+    sweep,zigzag,zorder}.py` (`hilbert` == the `e50/log-Mel` baseline). Verdict: **non-lever**
+    (all 5 curves land 72.07–72.60 avg AUROC, 0.5-pt spread). Companion set `mimii/scan-type-maha/
+    {hilbert,scan,sweep,zigzag,zorder}.py` re-scores each scan run with the winning student-Maha
+    readout (`ABL_SCORER=MahaScorer/student`) — used by `docs/run_scan_ablation.sh`.
   - scorer-type ablation (log-Mel + e50, varying the *test-time score readout*):
     `mimii/scorer/{cos-residual,student-maha,student-knn,teacher-maha,teacher-knn}.py`
     (`cos-residual` == the native `e50/log-Mel` readout). The scorer is orthogonal to
@@ -93,7 +104,7 @@ python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --node_rank=0 \
 
 **Step 2 — generate `meta.json`** at each dataset root (`data/gen_benchmark/`):
 ```bash
-python data/gen_benchmark/mimii-toy.py      # -> data/dcase-2020-three-channel/meta.json
+python data/gen_benchmark/mimii-toy.py      # -> data/dcase-2020-spectrogram/meta.json
 python data/gen_benchmark/mimii-stgram.py   # -> data/dcase-2020-stgram*/meta.json
 python data/gen_benchmark/mvtec.py          # -> data/mvtec/meta.json  (visa.py, coco.py likewise)
 ```
@@ -144,7 +155,10 @@ Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
 ## Audio-specific customizations vs. stock ADer
 
 - Dataset roots `dcase-2020-spectrogram` / `dcase-2020-three-channel` / `dcase-2020-stgram` /
-  `dcase-2020-stgram-delta` are special-cased in `data/ad_dataset.py:69`. Layout is the standard
+  `dcase-2020-stgram-delta` are special-cased in `data/ad_dataset.py:69` (`dcase-2020-three-channel`
+  is a **legacy alias**, still tolerated by the code but no longer populated — the log-Mel root is
+  now `dcase-2020-spectrogram`; raw wavs for the audio-backbone probe live under `data/dcase-2020/`).
+  Layout is the standard
   `<cls>/{train,test}/{normal,abnormal}/*.png` split (all machine IDs — `id_00/id_02/id_04/id_06`
   — pooled into both splits; the ID is only in the filename). The special-case exists because the
   `train` split may still contain `abnormal` samples, which are **filtered out at load time** so
@@ -179,15 +193,35 @@ Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
   (presets per run group; `--family sp_max|sp_mean`). Auto-detects the 21- vs 42-column layout.
 - `docs/reeval_sp_mean.py` (+ `docs/reeval_and_plot_sp_mean.sh`) — re-evaluates saved
   `net_<E>.pth` checkpoints to recover sp_mean metrics for runs that only recorded sp_max;
-  writes `<run-dir>/metric_reeval.txt` in the native 42-column layout.
+  writes `<run-dir>/metric_reeval.txt` in the native 42-column layout. Also the workhorse for the
+  scorer/scan ablations (re-scores a trained decoder under a swapped `ABL_SCORER`).
+- **Ablation drivers + plotters** (each writes one folder per figure under `docs/plots/mimii_*`,
+  holding both `plot.png` and its `data.csv`, plus a `*_summary.csv`):
+  - `docs/run_scorer_ablation.sh` + `docs/plot_scorer_ablation.py` → `docs/plots/mimii_scorer/`
+    (cos-residual vs {student,teacher}×{maha,knn} over all epochs of one e50×log-Mel run).
+  - `docs/run_scan_ablation.sh` + `docs/plot_scan_ablation.py` → `docs/plots/mimii_scan/`
+    (5 scan curves, re-scored with student-Maha via the `scan-type-maha/` configs).
+  - `docs/plot_backbone_ablation.py` → `docs/plots/mimii_backbone/` (ResNet34/CNN14/AST from the
+    `runs/audio_probe/` outputs).
 - `diagnostics/frozen_encoder_probe.py` — tests whether frozen ResNet34 teacher features alone
   separate normal/anomalous MIMII clips (Mahalanobis / kNN / PatchCore-style scorers), to decide
-  whether the encoder or the downstream decoder is the bottleneck.
+  whether the encoder or the downstream decoder is the bottleneck. (Encoder was **exonerated**.)
+- `diagnostics/student_feature_probe.py` — re-scores the *trained Mamba student's* GAP features
+  with the same Maha/kNN probe, to bisect whether the downstream gap is the cosine-residual
+  readout or the decoder distorting the manifold. (Verdict: it's the **readout** — student+Maha
+  ≈ teacher+Maha.)
+- `diagnostics/audio_backbone_probe.py` — swaps the frozen ImageNet ResNet34 for an
+  audio-pretrained backbone (**AST**, **CNN14**) run natively on the raw MIMII wavs
+  (`data/dcase-2020/`), then fits the same Maha/kNN scorers. Outputs `runs/audio_probe/{ast,cnn14}/`.
+  Deps: `panns_inference`, `torchlibrosa`, `transformers` (env `mamba-ad`).
 
 ## Notes
 
 - `NOTE.md` is the running, dated research log — check the latest entries for current direction
   and known issues, and append there when direction changes.
+- `docs/ABLATION_SUMMARY.md` is the **consolidated results doc** (all ablation fronts in one place:
+  lever table, gap decomposition, per-class ceilings, conclusions). Read this first for the big
+  picture; `NOTE.md` for the dated blow-by-blow.
 - `docs/stgram-mambaad/PLAN.md` is the design doc for the STgram→MambaAD pipeline.
 - `runs/` holds checkpoints, logs, and outputs; plots land in `docs/plots/` and
   `docs/short-epoch-plots/`.
