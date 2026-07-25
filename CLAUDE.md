@@ -42,10 +42,6 @@ conda activate mamba-ad
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/envs/mamba-ad/lib
 ```
 
-Mamba deps: `mamba_ssm`, `causal_conv1d`, `triton`, `numpy-hilbert-curve`, `pyzorder`.
-Audio: `librosa`. Baseline track: `anomalib`, `faiss-gpu`. Audio-backbone probe:
-`panns_inference`, `torchlibrosa`, `transformers` (AST).
-
 ## Common commands
 
 ```bash
@@ -68,7 +64,6 @@ python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --node_rank=0 \
   - ablation-type: `e50` (super-short, lr 5e-3/wd 0.01 — current default), `e200`
     (lr 5e-3/wd 0.01), `e1000` (long schedule, decay@800, sp_max-only 21-col metrics),
     `lowlr-lowwd` (lr 1e-3/wd 1e-4, 200 ep — stable but underfit).
-  - input-type: `log-Mel` (`data/dcase-2020-spectrogram`), `stgram`, `stgram-delta`.
   - scan-type ablation (log-Mel + e50, varying scan curve): `mimii/scan-type/{hilbert,scan,
     sweep,zigzag,zorder}.py` (`hilbert` == the `e50/log-Mel` baseline). Verdict: **non-lever**
     (all 5 curves land 72.07–72.60 avg AUROC, 0.5-pt spread). Companion set `mimii/scan-type-maha/
@@ -90,39 +85,17 @@ python -m torch.distributed.launch --nproc_per_node=4 --nnodes=1 --node_rank=0 \
 - PaDiM baseline (anomalib track, *not* `run.py`): `cd src && python padim_baseline.py`
   (MVTec) or `python padim_baseline_mimii.py` → writes `padim_performance.csv`.
 
-## Data pipeline (two steps, both required before training)
-
-**Step 1 — generate spectrogram PNGs** from raw wavs (`src/` scripts; clips force-cropped to
-10 s / 313 frames so all generators match):
-- `src/gen_mel_images.py` — single-channel log-Mel images.
-- `src/gen_stgram_images.py` — 3-channel STgram images (Sgram + frozen-TgramNet Tgram + third
-  channel selected by flag: `sgram` or `delta`). Loads TgramNet weights from the STgram-MFN
-  checkpoint. Scaling is min-max per channel — see the script for the current global-vs-local
-  convention (per-audio local scaling caused training issues and was fixed).
-- Legacy notebooks live in `src/notebooks/` (`MIMII_spectrogram_converter.ipynb`,
-  `MIMII_Toy_spectrogram_converter.ipynb`).
-
-**Step 2 — generate `meta.json`** at each dataset root (`data/gen_benchmark/`):
-```bash
-python data/gen_benchmark/mimii-toy.py      # -> data/dcase-2020-spectrogram/meta.json
-python data/gen_benchmark/mimii-stgram.py   # -> data/dcase-2020-stgram*/meta.json
-python data/gen_benchmark/mvtec.py          # -> data/mvtec/meta.json  (visa.py, coco.py likewise)
-```
+## Data
 
 MIMII classes: `fan, pump, slider, valve, ToyCar, ToyConveyor`.
 
-## Architecture (the cross-file picture)
+Datasets are **pre-generated PNGs plus a `meta.json` per root** — both steps are required before
+training. To (re)build them, use the `mimii-data-pipeline` skill.
 
-**Entry flow:** `run.py` → `get_cfg()` (`configs/__init__.py`) → `init_training` →
-`init_checkpoint` → `get_trainer(cfg).run()`.
-
-**Registry pattern** (`util/registry.py`): MODEL / DATA / TRAINER / LOSS / OPTIM / TRANSFORMS
-registries populated by `@*.register_module` decorators, consumed by `get_*` factories in each
-package's `__init__.py`. timm/torchvision models auto-register as `timm_<name>` / `tv_<name>`.
+## Architecture notes (the non-obvious parts)
 
 **Config = Python class inheritance, not YAML.** Configs subclass bases in `configs/__base__/`
-(`cfg_common`, `cfg_dataset_default`, `cfg_model_mambaad`) and set `data.*`, `model_t`/`model_s`,
-`loss.loss_terms`, `trainer.name`, `metrics`, etc.
+(`cfg_common`, `cfg_dataset_default`, `cfg_model_mambaad`).
 
 **Trainer:** `trainer/_base_trainer.py` holds the DDP/AMP/logging/checkpoint loop; MambaAD uses
 `MAMBAADTrainer` (`trainer/mambaad_trainer.py`) — frozen teacher (resnet34) → Mamba-decoder
@@ -133,24 +106,12 @@ student, trained with **`CosLoss` under log-term name `cos`**. The base trainer 
 > the trainer computes — a mismatched name means the loss is never logged, with no error. Keep
 > config `loss_terms`/`log_terms` names and the trainer in sync (currently both `cos`).
 
-**Model:** `model/mambaad.py` — Mamba decoder with Hilbert-curve scanning
-(`scan_type='hilbert'`, `num_direction=8`).
+**Metrics:** current MIMII configs record both the `*_sp_max` and `*_sp_mean` pooling families
+(6 metrics, 42-column `metric.txt`); **older runs recorded sp_max only (21 columns)**, so any
+tool reading `metric.txt` must handle both layouts.
 
-**Dataset:** `data/ad_dataset.py` `DefaultAD` reads `meta.json` and yields
-`{img, img_mask, cls_name, anomaly, img_path}`.
-
-**Metrics:** two pooling families over the anomaly map (`util/metric.py`) — `*_sp_max` (max over
-pixels) and `*_sp_mean` (mean). Current MIMII configs record both (6 metrics, 42-column
-`metric.txt`); older runs recorded sp_max only (21 columns).
-
-**Scorer (test-time readout):** `util/scorer.py` — a `SCORER` registry decoupling *how a
-per-clip anomaly score is produced* from the metrics that consume it. `CosResidualScorer` is the
-native path (per-pixel `1-cos(ft,fs)` map, wrapping `Evaluator.cal_anomaly_map` — the default when
-a config sets no `cfg.scorer`, so non-MIMII configs are unaffected). `MahaScorer`/`KNNScorer`
-(`source='student'|'teacher'`) fit a per-class bank on GAP features of the normal train split and
-emit an image-level score broadcast to a constant map. `MAMBAADTrainer` builds it via `get_scorer`,
-runs `_fit_scorer()` before `test()` when `needs_fit`, and calls `score_batch` in the test loop.
-Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
+**Scorer:** `CosResidualScorer` is the default whenever a config sets no `cfg.scorer`, so
+non-MIMII configs are unaffected by the scorer registry.
 
 ## Audio-specific customizations vs. stock ADer
 
@@ -166,11 +127,7 @@ Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
   train / `id_02` test — that is no longer the case.)
 - Encoder is `resnet34` (stock image MambaAD uses `wide_resnet50_2`); local weights at
   `model/pretrain/resnet34-43635321.pth`.
-- `meta.json` schema is shared across datasets: per-split → per-class list of
-  `{img_path, mask_path, cls_name, specie_name, anomaly (0/1)}`. For MIMII `mask_path` is empty
-  (image-level labels only — no pixel masks).
-- Baseline/ablation track in `src/`: PaDiM + AdaLN/FiLM (`src/padim_adaln/`), patched anomalib
-  datamodules (`src/mvtecad_patched_*`, `src/mimii_anomalib_*`).
+- For MIMII, `meta.json`'s `mask_path` is empty — image-level labels only, no pixel masks.
 
 ## Training stability & resume (hard-won, July 2026)
 
@@ -187,34 +144,6 @@ Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
   best-checkpoint selection** — final-epoch numbers understate the model. Compare runs at their
   peaks (plot first), not at the final epoch.
 
-## Analysis & diagnostic tooling
-
-- `docs/plot_mimii_val_metrics.py` — plots AUROC/AP/F1 vs. epoch from a run's `metric.txt`
-  (presets per run group; `--family sp_max|sp_mean`). Auto-detects the 21- vs 42-column layout.
-- `docs/reeval_sp_mean.py` (+ `docs/reeval_and_plot_sp_mean.sh`) — re-evaluates saved
-  `net_<E>.pth` checkpoints to recover sp_mean metrics for runs that only recorded sp_max;
-  writes `<run-dir>/metric_reeval.txt` in the native 42-column layout. Also the workhorse for the
-  scorer/scan ablations (re-scores a trained decoder under a swapped `ABL_SCORER`).
-- **Ablation drivers + plotters** (each writes one folder per figure under `docs/plots/mimii_*`,
-  holding both `plot.png` and its `data.csv`, plus a `*_summary.csv`):
-  - `docs/run_scorer_ablation.sh` + `docs/plot_scorer_ablation.py` → `docs/plots/mimii_scorer/`
-    (cos-residual vs {student,teacher}×{maha,knn} over all epochs of one e50×log-Mel run).
-  - `docs/run_scan_ablation.sh` + `docs/plot_scan_ablation.py` → `docs/plots/mimii_scan/`
-    (5 scan curves, re-scored with student-Maha via the `scan-type-maha/` configs).
-  - `docs/plot_backbone_ablation.py` → `docs/plots/mimii_backbone/` (ResNet34/CNN14/AST from the
-    `runs/audio_probe/` outputs).
-- `diagnostics/frozen_encoder_probe.py` — tests whether frozen ResNet34 teacher features alone
-  separate normal/anomalous MIMII clips (Mahalanobis / kNN / PatchCore-style scorers), to decide
-  whether the encoder or the downstream decoder is the bottleneck. (Encoder was **exonerated**.)
-- `diagnostics/student_feature_probe.py` — re-scores the *trained Mamba student's* GAP features
-  with the same Maha/kNN probe, to bisect whether the downstream gap is the cosine-residual
-  readout or the decoder distorting the manifold. (Verdict: it's the **readout** — student+Maha
-  ≈ teacher+Maha.)
-- `diagnostics/audio_backbone_probe.py` — swaps the frozen ImageNet ResNet34 for an
-  audio-pretrained backbone (**AST**, **CNN14**) run natively on the raw MIMII wavs
-  (`data/dcase-2020/`), then fits the same Maha/kNN scorers. Outputs `runs/audio_probe/{ast,cnn14}/`.
-  Deps: `panns_inference`, `torchlibrosa`, `transformers` (env `mamba-ad`).
-
 ## Notes
 
 - `NOTE.md` is the running, dated research log — check the latest entries for current direction
@@ -223,7 +152,8 @@ Selected by the `ABL_SCORER` config knob (see the scorer-type ablation above).
   lever table, gap decomposition, per-class ceilings, conclusions). Read this first for the big
   picture; `NOTE.md` for the dated blow-by-blow.
 - `docs/stgram-mambaad/PLAN.md` is the design doc for the STgram→MambaAD pipeline.
-- `runs/` holds checkpoints, logs, and outputs; plots land in `docs/plots/` and
-  `docs/short-epoch-plots/`.
+- Tooling guidance is lazy-loaded: `docs/CLAUDE.md` (plotters, re-evaluation) and
+  `diagnostics/CLAUDE.md` (frozen-feature probes and their verdicts) load when you work in
+  those directories.
 - **Keep this file current:** when the loss, configs, dataset roots, or workflow change, update
   the matching section here in the same commit.
