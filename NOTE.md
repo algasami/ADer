@@ -142,8 +142,9 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
   | CNN14 (AudioSet, audio)    | 50.4 | 67.8 | 90.3 | 71.9 | 76.0 | 58.7 | **69.2** | **−2.6** |
   | AST (AudioSet, audio)      | 56.7 | 82.3 | 93.6 | 78.9 | 82.7 | 66.4 | **76.8** | **+5.0** |
   | STgram-MFN (supervised)    | 87.1 | 90.9 | 98.9 | 98.6 | 94.7 | 74.3 | **90.7** | +18.9 |
-  - **AST beats ResNet34 by +5.0** — backbone IS a real lever (pump +10, valve +9, ToyCar +7).
-    AST embedding = mean over patch tokens (beats pooler); native `ASTFeatureExtractor` 128-mel/16k.
+  - **AST beats ResNet34 by +5.0 at the frozen-feature level** — backbone IS a real lever
+    (pump +10, valve +9, ToyCar +7). AST embedding = mean over patch tokens (beats pooler);
+    native `ASTFeatureExtractor` 128-mel/16k.
   - **CNN14 is −2.6, WORSE than ImageNet ResNet34** — so "audio-pretrained" is NOT automatically
     better; it's specifically AST (transformer+AudioSet). An audio *CNN* underperforms an image CNN
     here. Kills the naive "just use audio features" framing. (CNN14 = 16k checkpoint, sr-matched.)
@@ -154,6 +155,24 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
     per-class oracle backbone+rep+tap selection the frozen ceiling averages ~79.2, still −11.5 below
     STgram-MFN. (`fan` caveat: stays 50–58 for the audio backbones + log-Mel RN34, but the RN34
     STgram-image *shallow tap* `knn_layer1` reaches ~71.4 — fragile/tap-dependent, still −16 vs 87.)
+  - **Scope caveat — this front has NO per-epoch curves, unlike scan/scorer, because nothing is
+    trained.** The probe runs each backbone `.eval()`/`requires_grad=False` under `no_grad`, then
+    fits Maha/kNN on the train-normal bank: no optimizer, no checkpoints, so no epoch axis exists.
+    An epoch axis would add nothing anyway — the scorer ablation showed frozen-teacher scorers are
+    checkpoint-independent by construction (`static_fit` → flat lines over all 25 epochs), and that
+    "peaks-early" is a *cos-residual readout* artifact, not a feature property. So:
+    - **established:** AST features are more separable than RN34 features under an identical
+      readout/split/scorer (single variable, and Maha is already the best known readout).
+    - **NOT established:** that a *trained* MambaAD on AST hits 76.8. That extrapolation leans on
+      the decoder-gap bisection (student+Maha 72.5 ≈ teacher+Maha 71.8, within ~1 pt), measured on
+      RN34 and assumed to transfer. Quote the +5 as a frozen-feature result, not end-to-end.
+    - **why it stayed a probe:** the MambaAD teacher is `features_only=True, out_indices=[1,2,3]`
+      (3-level spatial pyramid); AST emits one global vector per clip and the winning tap
+      (`ast_meanpatch`) discards the time–freq layout. Teacher-slot AST = reshaping patch tokens to
+      a grid at 3 depths + rebuilding fusion channel dims — a port, not an ablation flag.
+    - **the free axis here is the TAP, not epochs:** AST pooler 73.4 vs mean-patch 76.8 = 3.3-pt
+      spread from tap choice alone, comparable to the +5.0 headline, and only 2 taps (AST) / 1
+      (CNN14) were tried. Sweeping AST hidden states by layer is the cheap follow-up.
   - Outputs: `runs/audio_probe/{ast,cnn14}/auroc.csv` + `run.log`. Deps added: `panns_inference`,
     `torchlibrosa` (env `mamba-ad`); `transformers` already present for AST. Both run single-GPU.
 
@@ -161,5 +180,6 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
   gap decomposition 71.8 → +5 AST → +14 objective → 90.7 STgram-MFN, per-class ceilings). Bottom
   line: the input-representation question is answered as a **negative result** — the downstream
   pipeline plateaus at ~72; the two remaining levers with headroom are the backbone (banked: AST
-  +5) and, dominantly, the **learning objective** (supervised machine-ID discrimination, +14), a
-  new training track rather than an ablation of the existing one.
+  +5, frozen-probe only — never trained end-to-end) and, dominantly, the **learning objective**
+  (supervised machine-ID discrimination, +14), a new training track rather than an ablation of the
+  existing one.
