@@ -1,0 +1,4 @@
+readout,best_epoch,fan,pump,slider,valve,ToyCar,ToyConveyor,mean
+neg_cos,16,82.77,87.53,85.08,94.58,92.82,72.41,85.86
+logit_nll,3,73.08,81.03,80.58,82.61,81.56,54.45,75.55
+maha_embed,11,71.64,82.01,93.19,88.36,90.24,65.25,81.78
