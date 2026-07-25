@@ -1,0 +1,9 @@
+backbone,scorer,is_best,fan,pump,slider,valve,ToyCar,ToyConveyor,mean_AUROC,delta_vs_ResNet34
+ResNet34,maha_concat,1,58.44,72.06,90.78,70.02,75.68,63.79,71.8,0.0
+CNN14,cnn14_emb_maha,1,50.36,67.84,90.32,71.92,75.96,58.66,69.18,-2.62
+CNN14,cnn14_emb_knn,0,50.47,68.46,88.92,71.38,76.38,58.43,69.01,-2.79
+AST,ast_pooler_maha,0,54.2,79.18,92.37,74.2,76.79,63.9,73.44,1.64
+AST,ast_pooler_knn,0,53.42,75.46,87.55,69.01,70.42,62.11,69.66,-2.14
+AST,ast_meanpatch_maha,1,56.67,82.3,93.62,78.89,82.7,66.35,76.75,4.95
+AST,ast_meanpatch_knn,0,56.6,79.72,87.88,71.46,78.37,63.04,72.85,1.05
+STgram-MFN,supervised,1,87.09,90.94,98.87,98.59,94.72,74.27,90.75,18.95

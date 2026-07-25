@@ -1,0 +1,5 @@
+backbone,scorer,mean_AUROC,delta_vs_ResNet34
+ResNet34,maha_concat,71.8,0.0
+CNN14,cnn14_emb_maha,69.18,-2.62
+AST,ast_meanpatch_maha,76.75,4.95
+STgram-MFN,supervised,90.75,18.95

@@ -109,3 +109,34 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
   - Outputs: `docs/plots/mimii_scorer/` — one folder per figure holding BOTH `plot.png` and its
     `data.csv`, plus `scorer_summary.csv` (peak/own-peak/final AUROC + AP/F1, both families) and
     `_data/<scorer>.txt` (42-col epoch-aligned metric files). Both sp_max and sp_mean families.
+
+## 7/25, 2026
+
+- **Backbone-swap probe — the last untested lever (`diagnostics/audio_backbone_probe.py`).**
+  All downstream fronts (schedule/scan/scorer/decoder) were flat or a fixed +6; the remaining
+  variable was the *feature extractor*. Swapped the frozen ImageNet ResNet34 for an
+  audio-pretrained backbone used **natively on the raw MIMII wavs** (`data/dcase-2020/data_<cls>/
+  <cls>/{train,test}/{normal,anomaly}_*.wav` — split verified identical to the image `meta.json`),
+  then fit the SAME Maha/kNN scorers (imported from `frozen_encoder_probe.py`) on the SAME
+  train-normal/test split. Only variable vs the 71.8 baseline = "ImageNet CNN" -> "AudioSet net".
+  Best-scorer (Maha) mean AUROC:
+  | backbone (frozen) | fan | pump | slider | valve | ToyCar | ToyConv | mean | Δ vs RN34 |
+  |-----|-----|-----|-----|-----|-----|-----|-----|-----|
+  | ResNet34 (ImageNet, image) | 58.4 | 72.1 | 90.8 | 70.0 | 75.7 | 63.8 | **71.8** | — |
+  | CNN14 (AudioSet, audio)    | 50.4 | 67.8 | 90.3 | 71.9 | 76.0 | 58.7 | **69.2** | **−2.6** |
+  | AST (AudioSet, audio)      | 56.7 | 82.3 | 93.6 | 78.9 | 82.7 | 66.4 | **76.8** | **+5.0** |
+  | STgram-MFN (supervised)    | 87.1 | 90.9 | 98.9 | 98.6 | 94.7 | 74.3 | **90.7** | +18.9 |
+  - **AST beats ResNet34 by +5.0** — backbone IS a real lever (pump +10, valve +9, ToyCar +7).
+    AST embedding = mean over patch tokens (beats pooler); native `ASTFeatureExtractor` 128-mel/16k.
+  - **CNN14 is −2.6, WORSE than ImageNet ResNet34** — so "audio-pretrained" is NOT automatically
+    better; it's specifically AST (transformer+AudioSet). An audio *CNN* underperforms an image CNN
+    here. Kills the naive "just use audio features" framing. (CNN14 = 16k checkpoint, sr-matched.)
+  - **Best frozen backbone (AST 76.8) still −14 below STgram-MFN (90.7).** Backbone swap recovers
+    only ~5 of the ~19-pt gap. Gap decomposition: 71.8 (ImageNet+UAD) → 76.8 (AST+UAD, **+5
+    features**) → 90.7 (STgram-MFN, **+14 objective**). The dominant remaining lever is the
+    **task framing** (supervised machine-ID/ArcFace discrimination), NOT the encoder. Even with
+    per-class oracle backbone+rep+tap selection the frozen ceiling averages ~79.2, still −11.5 below
+    STgram-MFN. (`fan` caveat: stays 50–58 for the audio backbones + log-Mel RN34, but the RN34
+    STgram-image *shallow tap* `knn_layer1` reaches ~71.4 — fragile/tap-dependent, still −16 vs 87.)
+  - Outputs: `runs/audio_probe/{ast,cnn14}/auroc.csv` + `run.log`. Deps added: `panns_inference`,
+    `torchlibrosa` (env `mamba-ad`); `transformers` already present for AST. Both run single-GPU.

@@ -1,0 +1,5 @@
+stage,kind,value,cumulative
+ImageNet RN34 + UAD Maha,level,71.8,71.8
++ AST audio features,gain,4.95,76.75
++ supervised objective,gain,14.0,90.75
+STgram-MFN (SOTA),level,90.75,90.75
