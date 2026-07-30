@@ -1,0 +1,8 @@
+readout,best_epoch,mean_auroc
+recon_spmax,15,57.33
+recon_spmean,36,56.53
+logit_nll,3,76.98
+neg_cos,48,80.26
+maha_embed,49,83.98
+fusion_negcos,31,73.16
+fusion_maha,44,74.13
