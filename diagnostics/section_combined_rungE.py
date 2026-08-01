@@ -51,7 +51,7 @@ from model import get_model
 from data import get_loader
 from diagnostics.frozen_encoder_probe import build_cfg
 from diagnostics.section_classifier_probe import parse_section
-from diagnostics.section_finetune_rungB import collect, score_epoch, CLASSES
+from diagnostics.section_finetune_rungB import collect, score_epoch, id_level_auroc, CLASSES
 from diagnostics.section_mamba_rungC import MambaSectionNet
 
 
@@ -84,16 +84,18 @@ def main():
     ap.add_argument('--rungB_auroc', type=float, default=0.859)
     ap.add_argument('--rungC_auroc', type=float, default=0.844)
     ap.add_argument('--stgram_auroc', type=float, default=0.9075)
+    ap.add_argument('--seed', type=int, default=0, help='seed repeat (CUDA is not bit-exact regardless)')
     ap.add_argument('--out_dir', default=None)
     args = ap.parse_args()
 
-    torch.manual_seed(0)
-    np.random.seed(0)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     cfg = build_cfg(args.cfg_path, args.batch, args.workers)
     cfg_name = os.path.splitext(os.path.basename(args.cfg_path))[0]
-    out_dir = args.out_dir or os.path.join('runs', 'section_rungE', cfg_name)
+    out_dir = args.out_dir or os.path.join('runs', 'section_rungE', f'{cfg_name}_seed{args.seed}')
     os.makedirs(out_dir, exist_ok=True)
     print(f"[cfg] {args.cfg_path}  data.root={cfg.data.root}")
 
@@ -133,10 +135,13 @@ def main():
 
     curve_path = os.path.join(out_dir, 'metric_curve.csv')
     train_log_path = os.path.join(out_dir, 'train_log.csv')
+    id_breakdown_path = os.path.join(out_dir, 'id_breakdown.csv')
     with open(curve_path, 'w') as f:
         f.write('epoch,readout,' + ','.join(CLASSES) + ',mean\n')
     with open(train_log_path, 'w') as f:
         f.write('epoch,train_loss,train_acc,skipped\n')
+    with open(id_breakdown_path, 'w') as f:
+        f.write('epoch,section,n,neg_cos,maha_embed\n')
 
     best = defaultdict(lambda: (-1.0, -1, None))
 
@@ -175,11 +180,16 @@ def main():
             Etr, _, cls_tr, _, _ = collect(model, train_loader, device, need_anom=False)
             train_pack = (Etr, cls_tr)
         res = score_epoch(model, test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        id_res = id_level_auroc(test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
 
         with open(curve_path, 'a') as f:
             for r, d in res.items():
                 f.write(f'{ep},{r},' + ','.join(f'{d.get(c, float("nan")):.4f}' for c in CLASSES)
                         + f',{d["mean"]:.4f}\n')
+        with open(id_breakdown_path, 'a') as f:
+            for sec, row in id_res.items():
+                f.write(f'{ep},{sec},{row["n"]},{row.get("neg_cos", float("nan")):.4f},'
+                        f'{row.get("maha_embed", float("nan")):.4f}\n')
         for r, d in res.items():
             if d['mean'] > best[r][0]:
                 best[r] = (d['mean'], ep, {c: d.get(c) for c in CLASSES})

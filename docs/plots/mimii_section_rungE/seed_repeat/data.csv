@@ -1,0 +1,4 @@
+seed,rungB_mean_auroc,rungE_mean_auroc
+seed 0,85.86,86.85
+seed 1,85.58,85.44
+seed 2,86.22,86.21

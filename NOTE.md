@@ -183,3 +183,17 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
   +5, frozen-probe only — never trained end-to-end) and, dominantly, the **learning objective**
   (supervised machine-ID discrimination, +14), a new training track rather than an ablation of the
   existing one.
+
+## 7/31, 2026
+
+- **Seed-repeat on the labels/objective ladder's Rung B vs Rung E — corrects the earlier E>B
+  claim.** Added `--seed` to `diagnostics/section_{finetune_rungB,combined_rungE}.py` and reran
+  both at seed 1/2 (same 50ep/sub=2 protocol as the original seed-0 runs from 7/25-7/30). Mean
+  AUROC: Rung B 85.86/85.58/86.22 → 85.89±0.26; Rung E 86.85/85.44/86.21 → 86.17±0.58. **E's
+  seed-0 "+0.95, new best of every rung" does not reproduce** — B beats E in 2 of 3 seeds. B and
+  E are statistically tied; the Mamba decoder does not reliably beat fine-tuning the encoder
+  alone. Figure: `docs/plots/mimii_section_rungE/seed_repeat/`.
+- **What IS robust across all 3 seeds: ToyCar trades off, ToyConveyor plateaus.** B beats E on
+  ToyCar by ~6.7 pts in every single seed (93.3 vs 86.7) — Rung E's architecture choice reliably
+  redistributes score toward slider/valve and away from ToyCar; it just doesn't move the mean.
+  ToyConveyor is ~70 for both B and E in every seed — no rung/seed pushes it higher.

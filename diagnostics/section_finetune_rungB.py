@@ -183,6 +183,40 @@ def score_epoch(model, test_pack, sec2idx, s_scale, train_pack=None, eval_maha=F
     return out
 
 
+def id_level_auroc(test_pack, sec2idx, s_scale, train_pack=None, eval_maha=False,
+                    target_classes=('ToyCar', 'ToyConveyor')):
+    """Same as score_epoch but broken down by machine SECTION (type/id) instead of class,
+    restricted to target_classes. Used for the ToyCar/ToyConveyor frontier analysis — the
+    class-level ladder numbers pool all machine IDs together, which hides whether the
+    residual gap to STgram-MFN is spread evenly across IDs or concentrated in one (as it is
+    for STgram-MFN itself, e.g. ToyConveyor id_02 / ToyCar id_01)."""
+    Ete, Lte, cls_te, sec_te, y_anom = test_pack
+    assigned = np.array([sec2idx.get(s, -1) for s in sec_te])
+
+    maha_banks = None
+    if eval_maha and train_pack is not None:
+        Etr, cls_tr = train_pack
+        maha_banks = {c: fit_mahalanobis(Etr[cls_tr == c]) for c in target_classes
+                      if (cls_tr == c).any()}
+
+    out = {}
+    for c in target_classes:
+        cm = cls_te == c
+        for sec in sorted(set(sec_te[cm])):
+            m = sec_te == sec
+            y = y_anom[m]
+            if y.min() == y.max():
+                continue
+            a = assigned[m]
+            row = {'n': int(m.sum()),
+                   'neg_cos': roc_auc_score(y, -(Lte[m][np.arange(len(a)), a] / s_scale))}
+            if maha_banks is not None and c in maha_banks:
+                mu, ic = maha_banks[c]
+                row['maha_embed'] = roc_auc_score(y, maha_score(Ete[m], mu, ic))
+            out[sec] = row
+    return out
+
+
 # --------------------------------------------------------------------------- #
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
@@ -210,16 +244,18 @@ def main():
     # anchors for the printed verdict
     ap.add_argument('--rungA_auroc', type=float, default=0.80, help='Rung A ceiling to beat')
     ap.add_argument('--stgram_auroc', type=float, default=0.9075)
+    ap.add_argument('--seed', type=int, default=0, help='seed repeat (CUDA is not bit-exact regardless)')
     ap.add_argument('--out_dir', default=None)
     args = ap.parse_args()
 
-    torch.manual_seed(0)
-    np.random.seed(0)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     cfg = build_cfg(args.cfg_path, args.batch, args.workers)
     cfg_name = os.path.splitext(os.path.basename(args.cfg_path))[0]
-    out_dir = args.out_dir or os.path.join('runs', 'section_rungB', cfg_name)
+    out_dir = args.out_dir or os.path.join('runs', 'section_rungB', f'{cfg_name}_seed{args.seed}')
     os.makedirs(out_dir, exist_ok=True)
     print(f"[cfg] {args.cfg_path}  data.root={cfg.data.root}")
 
@@ -257,10 +293,13 @@ def main():
 
     curve_path = os.path.join(out_dir, 'metric_curve.csv')
     train_log_path = os.path.join(out_dir, 'train_log.csv')
+    id_breakdown_path = os.path.join(out_dir, 'id_breakdown.csv')
     with open(curve_path, 'w') as f:
         f.write('epoch,readout,' + ','.join(CLASSES) + ',mean\n')
     with open(train_log_path, 'w') as f:
         f.write('epoch,train_loss,train_acc\n')
+    with open(id_breakdown_path, 'w') as f:
+        f.write('epoch,section,n,neg_cos,maha_embed\n')
 
     best = defaultdict(lambda: (-1.0, -1, None))  # readout -> (mean, epoch, per-class dict)
 
@@ -300,11 +339,16 @@ def main():
             Etr, _, cls_tr, _, _ = collect(model, train_loader, device, need_anom=False)
             train_pack = (Etr, cls_tr)
         res = score_epoch(model, test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        id_res = id_level_auroc(test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
 
         with open(curve_path, 'a') as f:
             for r, d in res.items():
                 f.write(f'{ep},{r},' + ','.join(f'{d.get(c, float("nan")):.4f}' for c in CLASSES)
                         + f',{d["mean"]:.4f}\n')
+        with open(id_breakdown_path, 'a') as f:
+            for sec, row in id_res.items():
+                f.write(f'{ep},{sec},{row["n"]},{row.get("neg_cos", float("nan")):.4f},'
+                        f'{row.get("maha_embed", float("nan")):.4f}\n')
         for r, d in res.items():
             if d['mean'] > best[r][0]:
                 best[r] = (d['mean'], ep, {c: d.get(c) for c in CLASSES})

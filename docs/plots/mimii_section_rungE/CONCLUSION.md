@@ -66,13 +66,34 @@ contributes nothing. Best "MambaAD + labels" model = **Rung E, 86.9**, leaving *
 STgram**, now localised to ToyCar/ToyConveyor.
 
 ## Caveats
-- Single seed; the +0.95 over Rung B is within the ~1-point CUDA-nondeterminism band observed
-  across the ladder — hence "marginal at the frontier." The fixed-readout stacking (+2.5 on
-  maha) is larger and more robust.
 - Peaks early-ish (ep38 here; `maha_embed` is stable 84–87 across epochs, `neg_cos` noisy).
 
+## UPDATE (2026-07-31) — seed-repeat CORRECTS the E>B claim
+
+Reran both Rung B and Rung E at `--seed 1` and `--seed 2` (same protocol). Result
+(`docs/plots/mimii_section_rungE/seed_repeat/`):
+
+| | seed 0 | seed 1 | seed 2 | mean |
+|---|---|---|---|---|
+| Rung B | 85.86 | 85.58 | 86.22 | **85.89 ± 0.26** |
+| Rung E | 86.85 | 85.44 | 86.21 | **86.17 ± 0.58** |
+| E − B  | +0.95 | −0.14 | −0.01 | **+0.28 ± 0.50** |
+
+**The seed-0 "+0.95, new best of every rung" result does not reproduce** — in 2 of 3 seeds B
+beats E. Revised verdict: **B and E are statistically tied** on mean AUROC; the Mamba decoder
+does not reliably improve on fine-tuning the encoder alone. The earlier "Caveats" section
+correctly flagged this as within the ~1-pt CUDA-noise band before the repeat confirmed it.
+
+**What DOES reproduce robustly across all 3 seeds:** the per-class trade-off. ToyCar is B > E by
+**~6.7 pts on average, in every seed** (B 93.3 vs E 86.7) — this is a real, repeatable effect of
+the architecture choice, not noise; it just doesn't show up in the mean because it's offset by
+slider/valve. See `docs/plots/mimii_section_frontier/CONCLUSION.md` for the full breakdown
+(including a cross-rung oracle that recovers this ToyCar loss for free, no new training) and
+confirmation that ToyConveyor's ceiling (~70, B≈E across all seeds) matches a structurally-hard
+machine ID (id_02) that STgram-MFN itself also struggles with.
+
 ## Next (open)
-- **ToyCar / ToyConveyor** are now the frontier — class-specific analysis (are they hard for
-  STgram too? ToyConveyor yes ~74; ToyCar no, STgram 94.7).
-- A **cross-rung / fused readout** and a small **seed repeat** to firm up the E-vs-B margin.
+- A **real (non-oracle) per-class or fused readout** — pick neg_cos vs maha_embed per class on a
+  held-out val split, not test — to see how much of the cross-rung oracle's headroom a
+  deployable rule actually captures.
 - Optional completeness: `--lambda_cls 0` control for Rung D.
