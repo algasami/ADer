@@ -1,0 +1,8 @@
+class,rungE,oracle,oracle_source,stgram
+fan,84.54,84.54,E maha,87.09
+pump,89.09,89.66,E neg_cos,90.94
+slider,96.57,96.57,E maha,98.87
+valve,96.85,96.85,E maha,98.59
+ToyCar,85.48,92.82,B neg_cos,94.72
+ToyConveyor,68.57,72.41,B neg_cos,74.27
+mean,86.85,88.81,E,90.75

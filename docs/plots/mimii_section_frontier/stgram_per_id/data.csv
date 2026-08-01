@@ -1,0 +1,8 @@
+class,id,auroc
+ToyCar,id_01,83.75
+ToyCar,id_02,95.66
+ToyCar,id_03,99.47
+ToyCar,id_04,99.99
+ToyConveyor,id_01,85.51
+ToyConveyor,id_02,62.44
+ToyConveyor,id_03,74.85

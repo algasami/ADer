@@ -197,3 +197,21 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
   ToyCar by ~6.7 pts in every single seed (93.3 vs 86.7) — Rung E's architecture choice reliably
   redistributes score toward slider/valve and away from ToyCar; it just doesn't move the mean.
   ToyConveyor is ~70 for both B and E in every seed — no rung/seed pushes it higher.
+- **ToyCar/ToyConveyor frontier analysis** (`docs/plot_section_frontier.py`, writeup
+  `docs/plots/mimii_section_frontier/CONCLUSION.md`) — splits the ladder's −3.9-to-STgram residual
+  into two different problems:
+  - ToyCar: Rung B alone already reaches 92.8-93.9 (only −1 to −2 vs STgram 94.7) — the gap is
+    recoverable, Rung E's decoder just trades it away for other classes.
+  - ToyConveyor: STgram-MFN's own per-machine-ID results (`STgram-MFN/results/.../result.csv`)
+    show its class average is dragged down by one hard unit, id_02 (62.4 vs 74.85/85.51 for the
+    other two ids). The new `id_breakdown.csv` logging (added to both scripts) shows the
+    MambaAD-track ladder has the **exact same weak point** — id_02 is the worst ToyConveyor id in
+    every one of the 4 new seed runs (both rungs, both readouts). This isn't a MambaAD-track
+    failure; it's a dataset-intrinsic hard machine unit that trips up the supervised SOTA too.
+  - **Cross-rung oracle** (best AUROC per class across all 5 rungs × all readouts — a
+    val-selectable choice over models that already exist, not a new one) = 88.8 mean, only −1.9
+    to STgram — vs −3.9 for the single best model (Rung E). Free headroom, zero new training,
+    just by using Rung B's readout for ToyCar/ToyConveyor instead of Rung E's.
+- Memory updated: `labels-objective-ablation-ladder` (now reflects the corrected B≈E verdict and
+  the frontier split). Next open item on this ladder: a real (non-oracle) per-class/fused readout
+  model, chosen on val not test.

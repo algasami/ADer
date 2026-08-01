@@ -1,0 +1,8 @@
+rung,ToyCar,ToyConveyor,note
+native (recon),61.60,61.50,"no labels; cos-residual sp_max, avg-peak ep10"
+A frozen+cls,83.22,62.96,"neg_cos, winning readout (mean 80.20)"
+D joint,82.89,68.76,"maha_embed, winning readout (mean 83.98)"
+C Mamba+cls,88.41,67.84,"maha_embed, winning readout (mean 84.43)"
+B FT encoder,92.82,72.41,"neg_cos, winning readout (mean 85.86)"
+E FT enc+Mamba,85.48,68.57,"maha_embed, winning readout (mean 86.85)"
+STgram-MFN,94.72,74.27,supervised SOTA baseline
