@@ -21,7 +21,8 @@ checkpoint). Full design rationale: `docs/stgram-mambaad/PLAN.md`.
 > result.** No representation, decoder, scan curve, or schedule moves the needle — every
 > downstream lever plateaus at ~72 AUROC. log-Mel actually *beats* both STgram variants. The
 > only downstream lever that helps is the test-time readout (Maha, +6–8); the only feature lever
-> is the backbone (AST, +5 — *frozen-probe only, never trained end-to-end*); the dominant
+> is the backbone (AST, +5 — measured frozen-probe; **end-to-end training was deliberately
+> skipped to save time, so this is an open lever, not a negative result**); the dominant
 > remaining gap to STgram-MFN (−14) is the *learning objective*, not the encoder or input.
 > Full write-up: **`docs/ABLATION_SUMMARY.md`**.
 

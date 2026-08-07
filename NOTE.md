@@ -215,3 +215,23 @@ Also need to export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/anaconda3/env/lib for
 - Memory updated: `labels-objective-ablation-ladder` (now reflects the corrected B≈E verdict and
   the frontier split). Next open item on this ladder: a real (non-oracle) per-class/fused readout
   model, chosen on val not test.
+
+## 8/8, 2026 — correction: AST is an OPEN lever, not a dismissed one
+
+Retracting an earlier framing (in chat and, by implication, in the docs) that grouped the AST
+backbone with the non-levers because it was "frozen-probe only / unproven end-to-end". That was
+wrong in emphasis and is now fixed in `CLAUDE.md`, `diagnostics/CLAUDE.md`, and
+`docs/ABLATION_SUMMARY.md` (§1, §3 lever table, §5, §7):
+
+- **The measurement stands and is positive:** AST +5.0 (71.8 → 76.8) under an identical frozen
+  Maha readout — the **largest feature-level effect in the whole campaign**, bigger than every
+  representation/scan/schedule/decoder result combined.
+- **AST was never trained end-to-end because that was a deliberate time/cost decision** (the
+  teacher-slot port — patch tokens → 3-level spatial grid + fusion channel rebuild — was judged
+  not worth the hours), **not because it failed, underperformed, or was refuted**. There is no
+  negative evidence about AST end-to-end; there is *no* evidence, which is a different thing.
+- The genuine epistemic caveat is unchanged and still worth quoting: *established* = AST features
+  are more separable than RN34 features under the same readout; *not established* = that a trained
+  MambaAD on AST reaches 76.8. Both statements are about missing measurement, not about a ceiling.
+- Consequence for the ladder writeups: Rung F's "AST swap explicitly NOT included" should be read
+  as **out of scope by choice**, not as a validated exclusion.

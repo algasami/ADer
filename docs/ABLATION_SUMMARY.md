@@ -23,7 +23,9 @@ on MIMII?"* — is answered, and the answer reframes the project:
   Swapping ImageNet ResNet34 for the **AST** audio transformer buys **+5** (76.8) *under an
   identical frozen Maha readout*. But an audio *CNN* (CNN14) is **−2.6** — so "audio-pretrained"
   is not automatically better; the AST architecture/pretraining is doing it. **Not yet
-  demonstrated end-to-end:** no MambaAD run has been trained with AST as the teacher (see §5).
+  demonstrated end-to-end:** no MambaAD run has been trained with AST as the teacher — that port
+  was **deliberately skipped as a time/cost decision**, not because AST underperformed. This is
+  the one *open* lever, not a settled one (see §5).
 - **The dominant remaining gap is the learning objective, not the features.** Even the best frozen
   backbone (AST, 76.8) is **−14** below the audio-native STgram-MFN baseline (90.7). That 14 pts
   is the supervised machine-ID/ArcFace discrimination that no frozen-feature + unsupervised-Maha
@@ -69,7 +71,7 @@ _How many AUROC points does each lever move? This is the whole campaign in one t
 | **Representation** | log-Mel / STgram-Sgram / STgram-delta | 71.8 / 68.4 / 66.6 (frozen maha_concat) | log-Mel **wins**; the STgram gambit *hurts* on average |
 | **Decoder training itself** | frozen teacher vs trained student (Maha) | 71.8 → 72.5 (**+0.7**) | **~No-op.** Distillation buys almost nothing |
 | **Scorer / readout** | cos-residual → maha/knn | 64.7 → **72.5** (**+7.8**) | **The one real downstream lever** |
-| **Backbone (features)** | ImageNet RN34 → AST | 71.8 → **76.8** (**+5.0**, frozen probe) | Real lever *at the feature level*; CNN14 shows it's AST-specific, not "audio" per se. Untrained end-to-end |
+| **Backbone (features)** | ImageNet RN34 → AST | 71.8 → **76.8** (**+5.0**, frozen probe) | **Real lever — the largest feature-level effect measured**; CNN14 shows it's AST-specific, not "audio" per se. End-to-end training not attempted (skipped by choice, §5) → **open, not refuted** |
 | **Learning objective** | UAD distance vs STgram-MFN supervised | 76.8 → **90.7** (**+13.9**) | **The dominant untapped lever** |
 
 ---
@@ -131,11 +133,13 @@ Consequences for what the +5 does and does not establish:
 - **Not established:** that a *trained* MambaAD on AST features reaches 76.8. The extrapolation
   rests on the decoder-gap bisection (trained student + Maha 72.5 lands within ~1 pt of frozen
   teacher + Maha 71.8), which was measured on ResNet34 and assumed to transfer.
-- **Why it stayed a probe:** MambaAD's teacher is `features_only=True, out_indices=[1,2,3]` — a
-  three-level *spatial* pyramid the student distills. AST emits one global vector per clip, and the
-  winning tap (`ast_meanpatch`) discards the time–frequency layout entirely. Making AST a teacher
-  means reshaping patch tokens back to a grid at three depths and rebuilding the fusion channel
-  dims — a port, not an ablation flag.
+- **Why it stayed a probe — a scheduling decision, not a verdict.** Making AST a teacher is a port,
+  not an ablation flag: MambaAD's teacher is `features_only=True, out_indices=[1,2,3]` (a three-level
+  *spatial* pyramid the student distills), while AST emits one global vector per clip and the winning
+  tap (`ast_meanpatch`) discards the time–frequency layout entirely, so it means reshaping patch
+  tokens back to a grid at three depths and rebuilding the fusion channel dims. That cost was judged
+  not worth the time at the point the campaign wound down. **Nothing here is evidence against AST
+  end-to-end** — it is simply unmeasured, and remains the most promising untried encoder.
 - **The under-explored axis here is the tap, not epochs.** Within AST alone: pooler 73.4 vs
   mean-patch 76.8 — a 3.3-pt spread from tap choice, comparable to the +5.0 headline. Only 2 taps
   were tried for AST and 1 for CNN14. Sweeping AST hidden states by layer is the cheap, informative
@@ -185,10 +189,11 @@ number on this track is ~77 (AST + Maha, no MambaAD training involved).
    self-supervised machine-ID classification (the STgram-MFN recipe) or SSL fine-tuning of the AST
    backbone — rather than distance-from-normal on frozen features. This is a new training track, not
    an ablation of the existing one.
-2. **Backbone (+5 at the frozen-feature level, banked).** AST is the best frozen encoder found; use
-   it as the default feature source for any future probe/readout. CNN14 is a dead end. Converting
-   the +5 into an end-to-end trained number requires porting AST into the MambaAD teacher slot
-   (§5) — real work on the *smaller* lever, so it is banked rather than scheduled.
+2. **Backbone (+5 at the frozen-feature level, open).** AST is the best frozen encoder found and the
+   largest feature-level effect in the campaign; use it as the default feature source for any future
+   probe/readout. CNN14 is a dead end. Converting the +5 into an end-to-end trained number requires
+   porting AST into the MambaAD teacher slot (§5); that port was **not attempted — a deliberate
+   time/cost call, not a result**. Treat this lever as untested with real headroom, not as settled.
 
 **Clean negative result, ready to write up:** *reconstruction-distillation image-AD (MambaAD) on
 spectrograms is bottlenecked first by its cosine-residual readout (a fixed +6–8 from a Maha head)
