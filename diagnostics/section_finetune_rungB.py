@@ -46,6 +46,7 @@ Outputs (runs/section_rungB/<cfg_name>/):
 
 import os
 import sys
+import json
 import argparse
 from collections import defaultdict
 
@@ -67,6 +68,7 @@ from data import get_loader
 # reuse Rung A pieces so the ONLY change vs Rung A is the trainable encoder
 from diagnostics.frozen_encoder_probe import build_cfg, fit_mahalanobis, maha_score
 from diagnostics.section_classifier_probe import parse_section, ArcMarginProduct
+from diagnostics.spec_augment import BatchAug, mixup_batch, mixup_arcface_loss
 
 CLASSES = ["fan", "pump", "slider", "valve", "ToyCar", "ToyConveyor"]
 _FROZEN_PREFIXES = ("conv1", "bn1", "layer1")  # what --freeze_stem pins
@@ -238,6 +240,22 @@ def main():
     ap.add_argument('--cosine', action='store_true', help='cosine-anneal both LRs to 0')
     ap.add_argument('--freeze_stem', action='store_true',
                     help='keep conv1/bn1/layer1 frozen (stabiliser; only fine-tune layer2/3)')
+    # --- augmentation (Phase 0: all default OFF, so the existing 3-seed no-aug runs
+    #     stay a valid control and this script reproduces them bit-for-bit-ish) ---
+    ap.add_argument('--time_crop_min', type=float, default=0.0,
+                    help='random time crop: min window fraction (e.g. 0.5); 0 = off')
+    ap.add_argument('--time_shift', type=float, default=0.0,
+                    help='random circular time shift, max fraction of width; 0 = off')
+    ap.add_argument('--freq_mask', type=int, nargs=2, default=(0, 0), metavar=('N', 'W'),
+                    help='SpecAugment frequency masks: count and max width in ROWS '
+                         '(post-resize; 1 mel bin = 2 rows). Keep narrow: machine identity '
+                         'IS a spectral signature and the loss discriminates machines.')
+    ap.add_argument('--time_mask', type=int, nargs=2, default=(0, 0), metavar=('N', 'W'),
+                    help='SpecAugment time masks: count and max width in columns')
+    ap.add_argument('--mixup', type=float, default=0.0,
+                    help='mixup Beta(a,a) alpha; 0 = off. Uses the two-label ArcFace form.')
+    ap.add_argument('--aug_preset', choices=['none', 'mild', 'standard'], default=None,
+                    help='shorthand for the flags above (explicit flags win)')
     ap.add_argument('--eval_every', type=int, default=1)
     ap.add_argument('--eval_maha', action='store_true',
                     help='also fit+score maha_embed each eval (extra train pass; slower)')
@@ -247,6 +265,29 @@ def main():
     ap.add_argument('--seed', type=int, default=0, help='seed repeat (CUDA is not bit-exact regardless)')
     ap.add_argument('--out_dir', default=None)
     args = ap.parse_args()
+
+    # --- resolve the augmentation preset (explicitly-passed flags always win) ---
+    _PRESETS = {
+        'none':     dict(time_crop_min=0.0, time_shift=0.0,
+                         freq_mask=(0, 0), time_mask=(0, 0), mixup=0.0),
+        # widths are post-resize rows/cols (256x256): 1 mel bin = 2 rows
+        'mild':     dict(time_crop_min=0.7, time_shift=0.10,
+                         freq_mask=(1, 16), time_mask=(1, 32), mixup=0.0),
+        'standard': dict(time_crop_min=0.5, time_shift=0.20,
+                         freq_mask=(2, 24), time_mask=(2, 48), mixup=0.2),
+    }
+    if args.aug_preset:
+        defaults = {a.dest: a.default for a in ap._actions}
+
+        def _same_as_default(key):
+            cur, dflt = getattr(args, key), defaults[key]
+            if isinstance(dflt, (tuple, list)):
+                return tuple(cur) == tuple(dflt)
+            return cur == dflt
+
+        for k, v in _PRESETS[args.aug_preset].items():
+            if _same_as_default(k):          # not overridden on the command line
+                setattr(args, k, v)
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -291,6 +332,16 @@ def main():
     print(f"[train] {obj}  epochs={args.epochs}  lr_bb={args.lr_backbone} lr_head={args.lr_head} "
           f"wd={args.wd}  cosine={args.cosine}")
 
+    # augmentation is TRAIN-ONLY and applied on the GPU batch, so the eval path
+    # (collect()) is byte-identical to every previous rung -- the readouts stay comparable
+    aug = BatchAug(time_crop_min=args.time_crop_min, time_shift=args.time_shift,
+                   n_freq=args.freq_mask[0], freq_w=args.freq_mask[1],
+                   n_time=args.time_mask[0], time_w=args.time_mask[1])
+    print(f"[aug]   preset={args.aug_preset or 'off'}  {aug.describe()}  mixup={args.mixup}")
+    with open(os.path.join(out_dir, 'aug_config.json'), 'w') as f:
+        json.dump(dict(preset=args.aug_preset, mixup=args.mixup, seed=args.seed,
+                       **aug.as_dict()), f, indent=2)
+
     curve_path = os.path.join(out_dir, 'metric_curve.csv')
     train_log_path = os.path.join(out_dir, 'train_log.csv')
     id_breakdown_path = os.path.join(out_dir, 'id_breakdown.csv')
@@ -314,8 +365,13 @@ def main():
             y = torch.tensor([sec2idx[parse_section(c, p)]
                               for c, p in zip(batch['cls_name'], batch['img_path'])],
                              device=device)
-            logits, _ = model(imgs, y)
-            loss = ce(logits, y)
+            imgs = aug(imgs)
+            imgs, perm, lam = mixup_batch(imgs, args.mixup)
+            y_b = y[perm] if perm is not None else None
+            emb = model.embed(imgs)
+            loss = mixup_arcface_loss(model, emb, y, y_b, lam, ce)
+            with torch.no_grad():               # margin-free logits, train-acc readout only
+                logits = model.logits(emb.detach())   # under mixup, acc is vs the dominant label
             opt.zero_grad()
             loss.backward()
             opt.step()
