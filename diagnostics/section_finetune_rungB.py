@@ -73,6 +73,34 @@ from diagnostics.spec_augment import BatchAug, mixup_batch, mixup_arcface_loss
 CLASSES = ["fan", "pump", "slider", "valve", "ToyCar", "ToyConveyor"]
 _FROZEN_PREFIXES = ("conv1", "bn1", "layer1")  # what --freeze_stem pins
 
+# Augmentation presets. Mask widths are POST-RESIZE rows/cols on the 256x256 tensor,
+# so 1 mel bin = 2 rows. Frequency masking is kept narrow on purpose: machine identity
+# is a spectral signature and the training objective discriminates machine sections.
+AUG_PRESETS = {
+    'none':     dict(time_crop_min=0.0, time_shift=0.0,
+                     freq_mask=(0, 0), time_mask=(0, 0), mixup=0.0),
+    'mild':     dict(time_crop_min=0.7, time_shift=0.10,
+                     freq_mask=(1, 16), time_mask=(1, 32), mixup=0.0),
+    'standard': dict(time_crop_min=0.5, time_shift=0.20,
+                     freq_mask=(2, 24), time_mask=(2, 48), mixup=0.2),
+}
+AUG_KEYS = tuple(AUG_PRESETS['none'])
+
+
+def resolve_aug_args(args):
+    """Fill unset (None) augmentation fields from the chosen preset, in place.
+
+    The aug flags default to None rather than 0 so that an EXPLICIT `--mixup 0`
+    is distinguishable from "not passed". With 0 defaults there is no way to tell
+    them apart, and the preset silently overwrites the explicit value -- which is
+    exactly what turned the first mixup ablation into a duplicate of the preset run.
+    """
+    preset = AUG_PRESETS[getattr(args, 'aug_preset', None) or 'none']
+    for k in AUG_KEYS:
+        if getattr(args, k, None) is None:
+            setattr(args, k, preset[k])
+    return args
+
 
 # --------------------------------------------------------------------------- #
 # model: trainable ResNet34 backbone -> concat-GAP -> embedding -> ArcFace
@@ -242,17 +270,21 @@ def main():
                     help='keep conv1/bn1/layer1 frozen (stabiliser; only fine-tune layer2/3)')
     # --- augmentation (Phase 0: all default OFF, so the existing 3-seed no-aug runs
     #     stay a valid control and this script reproduces them bit-for-bit-ish) ---
-    ap.add_argument('--time_crop_min', type=float, default=0.0,
+    #     NOTE: these default to None, not 0, so that an EXPLICIT `--mixup 0` is
+    #     distinguishable from "left unset". With a 0 default the preset resolution
+    #     below cannot tell the two apart and silently overwrites the explicit value --
+    #     which turned a mixup ablation into a duplicate of the preset run.
+    ap.add_argument('--time_crop_min', type=float, default=None,
                     help='random time crop: min window fraction (e.g. 0.5); 0 = off')
-    ap.add_argument('--time_shift', type=float, default=0.0,
+    ap.add_argument('--time_shift', type=float, default=None,
                     help='random circular time shift, max fraction of width; 0 = off')
-    ap.add_argument('--freq_mask', type=int, nargs=2, default=(0, 0), metavar=('N', 'W'),
+    ap.add_argument('--freq_mask', type=int, nargs=2, default=None, metavar=('N', 'W'),
                     help='SpecAugment frequency masks: count and max width in ROWS '
                          '(post-resize; 1 mel bin = 2 rows). Keep narrow: machine identity '
                          'IS a spectral signature and the loss discriminates machines.')
-    ap.add_argument('--time_mask', type=int, nargs=2, default=(0, 0), metavar=('N', 'W'),
+    ap.add_argument('--time_mask', type=int, nargs=2, default=None, metavar=('N', 'W'),
                     help='SpecAugment time masks: count and max width in columns')
-    ap.add_argument('--mixup', type=float, default=0.0,
+    ap.add_argument('--mixup', type=float, default=None,
                     help='mixup Beta(a,a) alpha; 0 = off. Uses the two-label ArcFace form.')
     ap.add_argument('--aug_preset', choices=['none', 'mild', 'standard'], default=None,
                     help='shorthand for the flags above (explicit flags win)')
@@ -266,28 +298,7 @@ def main():
     ap.add_argument('--out_dir', default=None)
     args = ap.parse_args()
 
-    # --- resolve the augmentation preset (explicitly-passed flags always win) ---
-    _PRESETS = {
-        'none':     dict(time_crop_min=0.0, time_shift=0.0,
-                         freq_mask=(0, 0), time_mask=(0, 0), mixup=0.0),
-        # widths are post-resize rows/cols (256x256): 1 mel bin = 2 rows
-        'mild':     dict(time_crop_min=0.7, time_shift=0.10,
-                         freq_mask=(1, 16), time_mask=(1, 32), mixup=0.0),
-        'standard': dict(time_crop_min=0.5, time_shift=0.20,
-                         freq_mask=(2, 24), time_mask=(2, 48), mixup=0.2),
-    }
-    if args.aug_preset:
-        defaults = {a.dest: a.default for a in ap._actions}
-
-        def _same_as_default(key):
-            cur, dflt = getattr(args, key), defaults[key]
-            if isinstance(dflt, (tuple, list)):
-                return tuple(cur) == tuple(dflt)
-            return cur == dflt
-
-        for k, v in _PRESETS[args.aug_preset].items():
-            if _same_as_default(k):          # not overridden on the command line
-                setattr(args, k, v)
+    resolve_aug_args(args)
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
