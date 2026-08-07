@@ -51,6 +51,13 @@ def load_run(d):
     return curve, train, os.path.basename(d.rstrip('/'))
 
 
+def last_epoch(runs):
+    """Lowest final epoch across an arm's runs -- these curves are written incrementally,
+    so an arm that is still training looks exactly like a finished one to pandas. Peaks
+    taken from a 3-epoch curve are not a result; the caller must gate on this."""
+    return min(int(cv.epoch.max()) for cv, _, _ in runs) if runs else 0
+
+
 def peak_stats(curve, readout):
     """Best mean AUROC, the epoch it happened, and how much is lost by the final epoch."""
     sub = curve[curve.readout == readout]
@@ -69,20 +76,54 @@ def main():
         'runs/section_rungB/log-Mel',        # seed 0 (pre-dates the _seedN naming)
         'runs/section_rungB/log-Mel_seed1',
         'runs/section_rungB/log-Mel_seed2'])
-    ap.add_argument('--treat_glob', default='runs/phase0_aug/standard_seed*')
+    ap.add_argument('--arms', nargs='+',
+                    default=['aug=runs/phase0_aug/standard_seed*',
+                             'aug-nomixup=runs/phase0_aug/nomixup_seed*'],
+                    help='treatment arms as name=glob; compared against the no-aug control')
     ap.add_argument('--out_dir', default='docs/plots/phase0_aug')
+    ap.add_argument('--min_epochs', type=int, default=None,
+                    help='epochs an arm must have to be quoted (default: the control\'s)')
+    ap.add_argument('--allow_incomplete', action='store_true',
+                    help='include still-training arms -- for inspection only, not results')
     args = ap.parse_args()
 
-    ctrl = [load_run(d) for d in args.ctrl_dirs if os.path.isdir(d)]
-    treat = [load_run(d) for d in sorted(glob.glob(args.treat_glob)) if os.path.isdir(d)]
-    if not treat:
-        raise SystemExit(f'no treatment runs matched {args.treat_glob}')
-    print(f'control: {[l for _, _, l in ctrl]}\ntreated: {[l for _, _, l in treat]}')
+    arms = [('no-aug', [load_run(d) for d in args.ctrl_dirs if os.path.isdir(d)])]
+    for spec in args.arms:
+        name, _, pat = spec.partition('=')
+        runs = [load_run(d) for d in sorted(glob.glob(pat)) if os.path.isdir(d)]
+        if runs:                      # skip arms that have not been run yet
+            arms.append((name, runs))
+        else:
+            print(f'[skip] arm "{name}": no runs matched {pat}')
+    if len(arms) < 2:
+        raise SystemExit('no treatment arms found')
+
+    # An arm that is still training writes metric_curve.csv incrementally and is
+    # indistinguishable from a finished one once loaded -- so gate on epoch count
+    # before any peak is quoted, or a 3-epoch curve gets reported as a verdict.
+    need = args.min_epochs or last_epoch(arms[0][1])
+    complete, partial = [], []
+    for name, runs in arms:
+        ep = last_epoch(runs)
+        (complete if ep >= need else partial).append((name, runs, ep))
+        print(f'{name:12s} ep{ep:>3}/{need}  {[l for _, _, l in runs]}')
+    if partial:
+        print('\n' + '!' * 78)
+        for name, _, ep in partial:
+            print(f'! INCOMPLETE ARM "{name}": only {ep}/{need} epochs -- STILL TRAINING.')
+        print('! Excluded from the tables below. Re-run when finished, or pass '
+              '--allow_incomplete\n! to inspect the partial curves (peaks from a partial '
+              'curve are NOT a result).')
+        print('!' * 78)
+    if not args.allow_incomplete:
+        arms = [(n, r) for n, r, _ in complete]
+        if len(arms) < 2:
+            raise SystemExit('\nno complete treatment arm yet; nothing to compare.')
     os.makedirs(args.out_dir, exist_ok=True)
 
     # ---------------- Q1/Q2: per-seed peaks --------------------------------- #
     rows = []
-    for arm, runs in (('no-aug', ctrl), ('aug', treat)):
+    for arm, runs in arms:
         for i, (curve, _, label) in enumerate(runs):
             for r in READOUTS:
                 st = peak_stats(curve, r)
@@ -97,17 +138,26 @@ def main():
     agg = summary.groupby(['readout', 'arm'])['best'].agg(['mean', 'std', 'count'])
     print(agg.round(2).to_string())
 
-    print('\n=== Q1b: PAIRED per-seed deltas (aug - no-aug) ===')
+    print('\n=== Q1b: PAIRED per-seed deltas vs the no-aug control ===')
     print('(the B/E seed-repeat put run-to-run noise at ~0.3-0.6pt; judge against that)')
-    for r in READOUTS:
-        a = summary[(summary.readout == r) & (summary.arm == 'aug')].sort_values('seed')
-        c = summary[(summary.readout == r) & (summary.arm == 'no-aug')].sort_values('seed')
-        n = min(len(a), len(c))
-        if n == 0:
-            continue
-        d = a['best'].values[:n] - c['best'].values[:n]
-        print(f'  {r:11s} ' + ' / '.join(f'{x:+.2f}' for x in d) +
-              f'   -> mean {d.mean():+.2f} +/- {d.std(ddof=0):.2f}')
+    for arm, _ in arms[1:]:
+        print(f'  [{arm}]')
+        for r in READOUTS:
+            a = summary[(summary.readout == r) & (summary.arm == arm)].sort_values('seed')
+            c = summary[(summary.readout == r) & (summary.arm == 'no-aug')].sort_values('seed')
+            n = min(len(a), len(c))
+            if n == 0:
+                continue
+            d = a['best'].values[:n] - c['best'].values[:n]
+            print(f'    {r:11s} ' + ' / '.join(f'{x:+.2f}' for x in d) +
+                  f'   -> mean {d.mean():+.2f} +/- {d.std(ddof=0):.2f}')
+
+    print('\n=== best-of-readout per arm (how the ladder is actually scored) ===')
+    bor = summary.loc[summary.groupby(['arm', 'seed'])['best'].idxmax()]
+    print(bor.groupby('arm').apply(
+        lambda g: pd.Series({'best_of_readout': g.best.mean(), 'std': g.best.std(ddof=0),
+                             'winning_readout': '/'.join(sorted(set(g.readout)))}),
+        include_groups=False).round(2).to_string())
 
     print('\n=== Q2: peak epoch and post-peak decay (the "peaks early" signature) ===')
     pk = summary.groupby(['readout', 'arm'])[['peak_epoch', 'decay']].mean()
@@ -115,7 +165,7 @@ def main():
 
     # per-class at the best epoch of the best readout, per arm
     pc_rows = []
-    for arm, runs in (('no-aug', ctrl), ('aug', treat)):
+    for arm, runs in arms:
         for r in READOUTS:
             vals = [peak_stats(cv, r) for cv, _, _ in runs]
             vals = [v for v in vals if v]
@@ -131,10 +181,11 @@ def main():
 
     # ---------------- figure ------------------------------------------------ #
     fig, axes = plt.subplots(2, 2, figsize=(13, 9))
-    colors = {'no-aug': '#b0413e', 'aug': '#2b6cb0'}
+    palette = ['#b0413e', '#2b6cb0', '#2f855a', '#805ad5', '#d69e2e']
+    colors = {name: palette[i % len(palette)] for i, (name, _) in enumerate(arms)}
 
     for ax, r in zip(axes.flat[:2], ['neg_cos', 'maha_embed']):
-        for arm, runs in (('no-aug', ctrl), ('aug', treat)):
+        for arm, runs in arms:
             for j, (curve, _, _) in enumerate(runs):
                 sub = curve[curve.readout == r].sort_values('epoch')
                 if sub.empty:
@@ -142,29 +193,29 @@ def main():
                 ax.plot(sub.epoch, sub['mean'] * 100, color=colors[arm], alpha=.75, lw=1.4,
                         label=arm if j == 0 else None)
         ax.axhline(STGRAM, ls='--', c='k', lw=1, label='STgram-MFN 90.75')
-        ax.set_title(f'Q1/Q2 — {r}: mean AUROC per epoch (3 seeds/arm)')
+        ax.set_title(f'Q1/Q2 - {r}: mean AUROC per epoch (3 seeds/arm)')
         ax.set_xlabel('epoch'); ax.set_ylabel('mean AUROC (%)')
         ax.legend(fontsize=8); ax.grid(alpha=.3)
 
     # Q3: train accuracy — the overfit signature
     ax = axes.flat[2]
-    for arm, runs in (('no-aug', ctrl), ('aug', treat)):
+    for arm, runs in arms:
         for j, (_, tr, _) in enumerate(runs):
             if tr is None:
                 continue
             ax.plot(tr.epoch, tr.train_acc, color=colors[arm], alpha=.75, lw=1.4,
                     label=arm if j == 0 else None)
-    ax.set_title('Q3 — train accuracy (23-way section task)')
+    ax.set_title('Q3 - train accuracy (23-way section task)')
     ax.set_xlabel('epoch'); ax.set_ylabel('train acc (%)')
     ax.legend(fontsize=8); ax.grid(alpha=.3)
 
     # peak-epoch scatter
     ax = axes.flat[3]
-    for arm in ('no-aug', 'aug'):
+    for arm, _ in arms:
         s = summary[summary.arm == arm]
         ax.scatter(s.peak_epoch, s.best, c=colors[arm], label=arm, s=45, alpha=.8)
     ax.axhline(STGRAM, ls='--', c='k', lw=1)
-    ax.set_title('Q2 — where the peak lands vs how high it is')
+    ax.set_title('Q2 - where the peak lands vs how high it is')
     ax.set_xlabel('peak epoch'); ax.set_ylabel('best mean AUROC (%)')
     ax.legend(fontsize=8); ax.grid(alpha=.3)
 
