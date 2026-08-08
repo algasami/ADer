@@ -235,3 +235,63 @@ wrong in emphasis and is now fixed in `CLAUDE.md`, `diagnostics/CLAUDE.md`, and
   MambaAD on AST reaches 76.8. Both statements are about missing measurement, not about a ceiling.
 - Consequence for the ladder writeups: Rung F's "AST swap explicitly NOT included" should be read
   as **out of scope by choice**, not as a validated exclusion.
+
+## 8/8, 2026 — Phase 1 / Rung G: AST finally trained end-to-end. It ties. The lever is the INPUT.
+
+Branch `aug-ast-phases`. This **resolves** the open item from the correction entry above — AST
+was the open lever, so it got measured rather than argued about. Writeup:
+`docs/plots/phase1_rungG/CONCLUSION.md`. Script: `diagnostics/section_ast_rungG.py`.
+
+Rung G = Rung B with the encoder swapped (trainable AST → mean patch tokens → ArcFace over the
+same 23 sections, same readouts, same eval, same CSV schema). Augmentation = mixup only, per the
+Phase 0 verdict below.
+
+- **AST end-to-end is a non-lever.** With input held identical — both encoders fed the *same*
+  cached AST fbanks, same objective/mixup/optimizer/AMP — **AST 88.28 ± 0.36 (3 seeds) vs
+  ResNet34 88.27 (matched 30ep) = +0.01**; run the control to convergence (70ep) and **ResNet34
+  wins, 88.65 vs 88.28**. At ~10× the compute per step.
+- **The +5.0 frozen-feature result was real but not predictive.** It does not survive fine-tuning.
+  This mirrors Rung A→B *in reverse* (a frozen-regime negative, maha 67.0, became +14.8 once the
+  encoder was unfrozen). **General lesson for this campaign: frozen-feature rankings do not
+  predict fine-tuned outcomes, in either direction.** Correct current phrasing: AST is a **+5
+  frozen lever and a ~0 end-to-end lever** — quote whichever matches the regime.
+  The correction entry above was right *as of its date*: "untested" ≠ "refuted", and the way to
+  settle it was to test it. It is now tested.
+- **What actually moved: the INPUT PIPELINE.** Every rung A–F, and every scan/scorer/schedule/
+  decoder ablation, ran on 8-bit PNGs resized 313×128 → 256×256. Native 1024×128 kaldi fbanks
+  from the raw wavs, same encoder, is the largest single lever measured in this project.
+  Decomposed against a clean PNG counterpart (3 seeds, `runs/phase1_pngctl/`):
+
+  | step | change | Δ |
+  |---|---|---|
+  | Rung B → PNG+mixup | recipe (mixup + lr + batch), PNG held | +1.00 → 86.89 ± 0.10 |
+  | PNG+mixup → fbank | **input** (PNG → fbank), 30ep matched | **+1.38** → 88.27 |
+  | 30ep → 70ep | schedule | +0.38 → 88.65 |
+
+  So **input ≈ +1.4, not the +2.8** the raw Rung-B comparison first suggested (that figure was
+  quoted as an upper bound and the counterpart run brought it down). The +1.38 residual still
+  carries Adam→AdamW and bf16, so it remains a modest upper bound on input alone.
+- **New best deployable: 88.65** (fbank, ResNet34, converged), vs Rung F 86.62. Gap to
+  STgram-MFN: **−2.10**, down from −4.13. Best ToyConveyor in the campaign (69.0–71.4) — worth
+  rechecking whether the id_02 "structural floor" was partly a PNG artifact.
+- **PNG+mixup alone = 86.89 ± 0.10 (3 seeds) already beats Rung F (86.62)** without touching the
+  input — cheap, and better-measured than several single-seed ladder claims.
+- Per-class, AST and ResNet34 are **complementary** (AST − RN34: slider +4.2, ToyCar +1.8,
+  pump +1.3; fan −4.2, valve −2.8) → Phase 2 fusion is now two encoders over one input.
+
+### Phase 0 (same branch, prerequisite): augmentation
+The whole ladder A–F trained with **zero augmentation** — `mimii/_base.py:100` assigns
+`test_transforms = train_transforms`, the same list object. Adding it is readout-dependent:
+maha +2.83, logit_nll +2.78, **neg_cos −4.15** (3 seeds each), i.e. **net −1.2 on
+best-of-readout** — a headline negative that flips the readout ordering. Component split:
+crop+masking alone is maha +0.32 / neg_cos −2.70 (harm, no benefit); **mixup** supplies
+essentially the whole gain. Partly corrects a ladder claim: Rung B's "`logit_nll` overfits,
+peaks at ep5" is substantially a missing-regularizer artifact (peak moves ep1.7 → ep19.0 under
+mixup). Writeup: `docs/plots/phase0_aug/CONCLUSION.md`.
+
+### Next
+1. Move the track off PNGs (highest value, orthogonal to everything already tried).
+2. Drop AST except as a fusion *diversity* member — not worth 10× compute for a tie.
+3. Phase 2 fusion: AST + ResNet34 over one input, held-out per-class readout (Rung F mechanism).
+4. Open: 3 seeds for the fbank control (currently 1); a clean input-only run that also holds
+   optimizer/AMP fixed.
