@@ -72,6 +72,7 @@ from diagnostics.frozen_encoder_probe import fit_mahalanobis, maha_score
 from diagnostics.section_classifier_probe import ArcMarginProduct
 from diagnostics.section_finetune_rungB import CLASSES, score_epoch, id_level_auroc
 from diagnostics.spec_augment import mixup_batch, mixup_arcface_loss
+from diagnostics.asnorm import (MODES, score_all_modes, auroc_by_class, auroc_by_section)
 
 SR = 16000
 CLIP_LEN = SR * 10
@@ -408,6 +409,8 @@ def main():
     open(curve_path, 'w').write('epoch,readout,' + ','.join(CLASSES) + ',mean\n')
     open(train_log_path, 'w').write('epoch,train_loss,train_acc\n')
     open(id_path, 'w').write('epoch,section,n,neg_cos,maha_embed\n')
+    sec_path = os.path.join(out_dir, 'asnorm_by_section.csv')
+    open(sec_path, 'w').write('epoch,mode,section,n,auroc\n')
 
     best = defaultdict(lambda: (-1.0, -1, None))
     for ep in range(1, args.epochs + 1):
@@ -446,7 +449,11 @@ def main():
             print(f'  epoch {ep:3d}/{args.epochs}  loss={tr_loss:.4f} acc={tr_acc:.2f}%')
             continue
         test_pack = collect(model, test_loader, device, meta, True, amp_dtype)
-        Etr, _, cls_tr, _, _ = collect(model, train_eval_loader, device, meta, False, amp_dtype)
+        # NOTE: collect() returns rows in DataLoader order, not item order, so the section
+        # labels must come from collect too -- deriving them from `items` would misalign
+        # every train embedding with the wrong section, silently.
+        Etr, _, cls_tr, sec_tr_, _ = collect(model, train_eval_loader, device, meta, False,
+                                             amp_dtype)
         # A non-finite embedding makes fit_mahalanobis raise "SVD did not converge",
         # which killed the whole run. Degrade to the finite readouts and keep going --
         # a diverged epoch should cost one row, not every epoch already computed.
@@ -457,16 +464,38 @@ def main():
         res = score_epoch(model, test_pack, sec2idx, model.arc.s, train_pack, finite)
         id_res = id_level_auroc(test_pack, sec2idx, model.arc.s, train_pack, finite)
 
+        # ---- AS-norm / per-section readouts (Phase 2 step 1) ----
+        # bank = per-class vs per-section; norm = raw distance vs z-normalized by the clip's
+        # own section's train-score statistics. Orthogonal knobs, measured separately.
+        as_res = {}
+        if finite:
+            Ete_, _, cls_te_, sec_te_, y_ = test_pack
+            all_sc = score_all_modes(Ete_, cls_te_, sec_te_, Etr, cls_tr, sec_tr_)
+            for mode, sc in all_sc.items():
+                as_res['as_' + mode] = auroc_by_class(sc, cls_te_, y_, CLASSES, roc_auc_score)
+            with open(sec_path, 'a') as f:
+                for mode, sc in all_sc.items():
+                    for s_, (n_, a_) in auroc_by_section(sc, sec_te_, y_, roc_auc_score).items():
+                        f.write(f'{ep},{mode},{s_},{n_},{a_:.4f}\n')
+            # keep the best epoch's per-clip scores so Phase 2 fusion needs no retrain --
+            # no run in this campaign has ever persisted scores, only per-epoch AUROC
+            best_mode = max(as_res, key=lambda k: as_res[k].get('mean', -1))
+            if as_res[best_mode].get('mean', -1) > best[best_mode][0]:
+                np.savez_compressed(os.path.join(out_dir, 'scores_best.npz'), epoch=ep,
+                                    cls=cls_te_, sec=sec_te_, anomaly=y_,
+                                    **{m: s for m, s in all_sc.items()})
+        res.update(as_res)
+
         with open(curve_path, 'a') as f:
             for r, d in res.items():
                 f.write(f'{ep},{r},' + ','.join(f'{d.get(c, float("nan")):.4f}' for c in CLASSES)
-                        + f',{d["mean"]:.4f}\n')
+                        + f',{d.get("mean", float("nan")):.4f}\n')
         with open(id_path, 'a') as f:
             for sec, row in id_res.items():
                 f.write(f'{ep},{sec},{row["n"]},{row.get("neg_cos", float("nan")):.4f},'
                         f'{row.get("maha_embed", float("nan")):.4f}\n')
         for r, d in res.items():
-            if d['mean'] > best[r][0]:
+            if d.get('mean', -1) > best[r][0]:
                 best[r] = (d['mean'], ep, {c: d.get(c) for c in CLASSES})
         msg = '  '.join(f'{r}={res[r]["mean"] * 100:.2f}' for r in
                         ('neg_cos', 'logit_nll', 'maha_embed') if r in res)
@@ -474,7 +503,7 @@ def main():
               + (f'  [skipped {skipped} non-finite steps]' if skipped else ''), flush=True)
 
     rows, header = [], ['readout', 'best_epoch'] + CLASSES + ['mean']
-    for r in ('neg_cos', 'logit_nll', 'maha_embed'):
+    for r in ('neg_cos', 'logit_nll', 'maha_embed') + tuple('as_' + m for m in MODES):
         if best[r][1] < 0:
             continue
         mean, epb, pc = best[r]
