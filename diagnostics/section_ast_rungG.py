@@ -487,9 +487,18 @@ def main():
         for row in rows:
             f.write(','.join(str(x).strip() for x in row) + '\n')
     bm, bep, _ = max(best.values(), key=lambda t: t[0])
-    print(f'\nRung G best = {bm * 100:.2f}% @ epoch {bep}')
-    print(f'  vs Rung B  85.89% (3-seed)  ->  {bm * 100 - 85.89:+.2f}  (the encoder swap)')
-    print(f'  vs STgram  90.75%           ->  {bm * 100 - 90.75:+.2f}  (remaining gap)')
+    name = 'Rung G (AST)' if args.backbone == 'ast' else 'CONTROL (ResNet34 on fbank)'
+    print(f'\n{name} best = {bm * 100:.2f}% @ epoch {bep}')
+    if args.backbone == 'ast':
+        print(f'  vs Rung B 85.89% (3-seed) -> {bm * 100 - 85.89:+.2f}  (encoder AND input; '
+              f'subtract the ResNet34-on-fbank control to isolate the encoder)')
+    else:
+        print(f'  vs Rung B 85.89% (3-seed) -> {bm * 100 - 85.89:+.2f}  (same encoder as Rung B, '
+              f'so this is the INPUT PIPELINE + recipe, NOT the encoder)')
+    print(f'  vs STgram 90.75%          -> {bm * 100 - 90.75:+.2f}  (remaining gap)')
+    if bep == args.epochs:
+        print(f'  [WARNING] peak is at the FINAL epoch -- the run is truncated, not converged. '
+              f'Re-run with more epochs before quoting this number.')
 
 
 if __name__ == '__main__':
