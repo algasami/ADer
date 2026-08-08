@@ -48,11 +48,29 @@ level with the five-rung A–E cross-rung oracle (88.80) that peeks at the test 
 figures in the campaign (69.0–71.4) — the class that resisted every previous lever and that drags
 STgram-MFN itself down via id_02.
 
-**Attribution caveat (open).** The control differs from Rung B in more than input: lr (1e-4 →
-5e-5), optimizer (Adam → AdamW), AMP (none → bf16), batch (64 → 32). So "+2.76 = input alone" is
-an *upper bound*. A clean PNG counterpart — Rung B's script, mixup-only, lr 5e-5, batch 32, 30
-epochs, 3 seeds — is running to `runs/phase1_pngctl/` to split input from recipe. **Do not quote
-the input effect as a settled number until that lands.**
+### Attribution — RESOLVED by the PNG counterpart
+
+The control differs from Rung B in more than input (lr 1e-4 → 5e-5, Adam → AdamW, no AMP →
+bf16, batch 64 → 32, 50 → 30/70 epochs), so +2.76 was only an *upper bound*. The clean PNG
+counterpart — Rung B's script, mixup-only, matched lr 5e-5 and batch 32, 30 epochs, 3 seeds
+(`runs/phase1_pngctl/`) — splits it:
+
+| step | change | Δ |
+|---|---|---|
+| Rung B → PNG+mixup | recipe (mixup + lr + batch), input held at PNG | **+1.00** (85.89 → 86.89 ± 0.10) |
+| PNG+mixup → fbank ctl | **input** (PNG → fbank), matched 30 epochs | **+1.38** (86.89 → 88.27) |
+| 30ep → 70ep | schedule on fbank | +0.38 (88.27 → 88.65) |
+| | **total** | **+2.76** |
+
+**So the input pipeline is worth ≈ +1.4, not +2.8** — still the largest single lever in the
+campaign, and still larger than the recipe change, but half the headline figure. The residual
++1.38 also carries the optimizer (Adam → AdamW) and AMP (none → bf16) differences, so it remains
+a modest upper bound on input alone; those are second-order next to a representation change, but
+they are not zero.
+
+Note also that PNG+mixup at **86.89 ± 0.10** already beats Rung F (86.62) — i.e. even without
+touching the input, mixup at a matched recipe is worth a new best. That is a cheaper, more
+robustly-measured result (3 seeds, σ 0.10) than several single-seed ladder claims.
 
 ## Per-class: the two encoders are complementary, not one-dominates
 
