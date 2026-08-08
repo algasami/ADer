@@ -103,6 +103,58 @@ def auroc_by_class(scores, cls_te, y_anom, classes, roc_auc_score):
     return out
 
 
+def meanid_auroc(scores, sec_te, cls_te, y_anom, classes, roc_auc_score, mask=None):
+    """AUROC in **STgram-MFN's convention**: per machine ID, averaged within a class, then
+    averaged over classes.
+
+    This is NOT the pooled-clip AUROC the rest of this campaign reports. STgram-MFN's
+    `result.csv` averages per-ID AUROCs (ToyCar .8375/.9566/.9947/.99999 -> .9472), and
+    per-section scoring specifically flatters the pooled number, so any comparison to that
+    baseline has to be made here.
+
+    `mask` restricts the computation to a subset of clips -- used for held-out epoch
+    selection, where the epoch is chosen on one half of the test split and reported on the
+    disjoint other half.
+    """
+    per_cls = {}
+    for c in classes:
+        vals = []
+        cm = cls_te == c
+        for s in np.unique(sec_te[cm]):
+            m = (sec_te == s) & np.isfinite(scores)
+            if mask is not None:
+                m = m & mask
+            if m.sum() < 2:
+                continue
+            y = y_anom[m]
+            if y.min() == y.max():
+                continue
+            vals.append(roc_auc_score(y, scores[m]))
+        if vals:
+            per_cls[c] = float(np.mean(vals))
+    per_cls['mean'] = float(np.mean([per_cls[c] for c in classes if c in per_cls])) \
+        if any(c in per_cls for c in classes) else float('nan')
+    return per_cls
+
+
+def make_folds(sec_te, y_anom, seed=0):
+    """Deterministic 2-fold split of the TEST clips, stratified by section x anomaly.
+
+    Held-out epoch selection needs a split the model never saw: pick the epoch on fold A,
+    report its score on fold B (and vice versa, then average). Stratifying by section AND
+    label keeps every machine ID and both classes represented in each half, which matters
+    because per-ID AUROC is undefined for a half that ends up all-normal.
+    """
+    rng = np.random.default_rng(seed)
+    fold = np.zeros(len(sec_te), dtype=np.int8)
+    for s in np.unique(sec_te):
+        for lab in (0, 1):
+            idx = np.where((sec_te == s) & (y_anom == lab))[0]
+            rng.shuffle(idx)
+            fold[idx[len(idx) // 2:]] = 1        # first half -> 0, rest -> 1
+    return fold
+
+
 def auroc_by_section(scores, sec_te, y_anom, roc_auc_score):
     """{section: (n, auroc)} -- the per-ID view, for the ToyConveyor id_02 question."""
     out = {}

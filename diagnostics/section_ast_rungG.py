@@ -72,7 +72,8 @@ from diagnostics.frozen_encoder_probe import fit_mahalanobis, maha_score
 from diagnostics.section_classifier_probe import ArcMarginProduct
 from diagnostics.section_finetune_rungB import CLASSES, score_epoch, id_level_auroc
 from diagnostics.spec_augment import mixup_batch, mixup_arcface_loss
-from diagnostics.asnorm import (MODES, score_all_modes, auroc_by_class, auroc_by_section)
+from diagnostics.asnorm import (MODES, score_all_modes, auroc_by_class, auroc_by_section,
+                                meanid_auroc, make_folds)
 
 SR = 16000
 CLIP_LEN = SR * 10
@@ -179,17 +180,40 @@ def build_cache(items, cache_dir, batch=32, procs=12):
 
 
 class FbankSet(torch.utils.data.Dataset):
-    def __init__(self, mm, idx, sec_ids, cls_names, anoms):
+    def __init__(self, mm, idx, sec_ids, cls_names, anoms, time_pool=1):
         self.mm, self.idx = mm, idx
         self.sec_ids, self.cls_names, self.anoms = sec_ids, cls_names, anoms
+        self.time_pool = time_pool
 
     def __len__(self):
         return len(self.idx)
 
     def __getitem__(self, i):
         j = self.idx[i]
-        return (torch.from_numpy(np.asarray(self.mm[j], dtype=np.float32)),
-                self.sec_ids[j], j)
+        x = np.asarray(self.mm[j], dtype=np.float32)          # (frames, mels)
+        if self.time_pool > 1:
+            # average-pool along TIME only -- keeps all 128 mel bins and full float
+            # precision, so Phase 1's advantage over the 8-bit PNGs is retained
+            t = (x.shape[0] // self.time_pool) * self.time_pool
+            x = x[:t].reshape(-1, self.time_pool, x.shape[1]).mean(axis=1)
+        return torch.from_numpy(x), self.sec_ids[j], j
+
+
+def run_name(args):
+    """Single source of truth for what a run IS. Hardcoded labels have twice produced logs
+    that described a different experiment than the one running (a control reporting its
+    result as an 'encoder swap'; a Mamba run labelled 'AST')."""
+    if args.decoder == 'mamba':
+        return 'RUNG H [ResNet34 teacher -> MFF/OCE -> Mamba student] on fbank'
+    if args.backbone == 'ast':
+        return 'RUNG G [AST encoder] on fbank'
+    return 'BASELINE [ResNet34 encoder, no decoder] on fbank'
+
+
+def build_cfg_for_model(cfg_path):
+    """Build a cfg only to instantiate MAMBAAD -- the data loaders here are fbank-based."""
+    from diagnostics.frozen_encoder_probe import build_cfg
+    return build_cfg(cfg_path, 8, 2)
 
 
 # --------------------------------------------------------------------------- #
@@ -237,6 +261,46 @@ class ResNetOnFbankNet(nn.Module):
         return self.arc(emb, label) if label is not None else self.arc.s * self.arc.cosine(emb)
 
 
+class MambaOnFbankNet(nn.Module):
+    """RUNG H — Rung E/F's architecture on Phase 1's fbank substrate.
+
+        fbank -> fine-tuned ResNet34 teacher -> MFF/OCE -> MambaUPNet student -> GAP -> ArcFace
+
+    The question: does the Mamba decoder add anything on top of a plain encoder+head that
+    already matches STgram-MFN? Every previous Mamba verdict (rungs C/D/E/F) was measured on
+    the PNG pipeline that Phase 1 showed was handicapped, so this re-tests it on a fair
+    substrate. `--decoder none` is the same-input baseline arm.
+
+    Like Rung E, `embed()` bypasses MAMBAAD.forward's teacher-feature detach so gradients
+    reach the encoder (the detach exists because stock MambaAD freezes its teacher).
+
+    SHAPE SIDESTEP: the Mamba decoder does not accept every input geometry -- measured, with
+    a 3-channel-replicated fbank: 256x256 OK, 512x128 OK, but 1024x128 and 256x128 both raise
+    a size-mismatch inside the decoder. So Rung H time-pools the 1024-frame fbank by 2 to
+    512x128, which keeps all 128 mel bins and full float precision (i.e. keeps Phase 1's
+    actual advantage -- no 8-bit quantization) and only halves time resolution. The baseline
+    arm is run at the SAME 512x128 so the A/B stays clean.
+    """
+
+    def __init__(self, mambaad_net, in_dim, n_classes, embed_dim=128, sub=2, s=30.0, m=0.5):
+        super().__init__()
+        self.net = mambaad_net
+        self.in_bn = nn.BatchNorm1d(in_dim)
+        self.proj = nn.Linear(in_dim, embed_dim)
+        self.emb_bn = nn.BatchNorm1d(embed_dim)
+        self.arc = ArcMarginProduct(embed_dim, n_classes, s=s, m=m, sub=sub)
+
+    def embed(self, x):
+        x = x.unsqueeze(1).repeat(1, 3, 1, 1)
+        feats_t = self.net.net_t(x)                          # trainable teacher, NOT detached
+        feats_s = self.net.net_s(self.net.mff_oce(feats_t))
+        gap = torch.cat([f.mean(dim=(2, 3)) for f in feats_s], dim=1)
+        return self.emb_bn(self.proj(self.in_bn(gap)))
+
+    def logits(self, emb, label=None):
+        return self.arc(emb, label) if label is not None else self.arc.s * self.arc.cosine(emb)
+
+
 class ASTSectionNet(nn.Module):
     """Trainable AST -> mean patch tokens -> Linear -> BN -> ArcFace. Mirrors Rung B's
     SectionNet, minus the multi-stage GAP concat (AST has no spatial pyramid)."""
@@ -263,6 +327,11 @@ class ASTSectionNet(nn.Module):
 def param_groups(model, lr_ast, lr_head, llrd):
     """Layer-wise lr decay over the transformer blocks: a ViT fine-tuned on ~20k clips
     wants the early blocks moving far slower than the head, or it forgets AudioSet."""
+    if hasattr(model, 'net'):            # Rung H: teacher at the low lr, Mamba+head at the high one
+        enc = [p for p in model.net.net_t.parameters() if p.requires_grad]
+        enc_ids = {id(p) for p in enc}
+        rest = [p for p in model.parameters() if p.requires_grad and id(p) not in enc_ids]
+        return [{'params': enc, 'lr': lr_ast}, {'params': rest, 'lr': lr_head}]
     if not hasattr(model, 'ast'):        # ResNet control: Rung B's two-group split
         bb = [p for p in model.backbone.parameters() if p.requires_grad]
         head = [p for n, p in model.named_parameters()
@@ -340,6 +409,15 @@ def main():
     ap.add_argument('--backbone', default='ast', choices=['ast', 'resnet34'],
                     help="'resnet34' is the PNG-vs-wav control: Rung B's encoder on the "
                          'SAME fbanks AST sees, so Rung G minus this isolates the encoder')
+    ap.add_argument('--decoder', default='none', choices=['none', 'mamba'],
+                    help="'mamba' = RUNG H (Rung E/F architecture on the fbank substrate); "
+                         "'none' = the plain encoder+head baseline arm")
+    ap.add_argument('--mamba_cfg', default='MambaAD/configs/mambaad/mimii/e50/log-Mel.py',
+                    help='config used ONLY to instantiate MAMBAAD, not to load data')
+    ap.add_argument('--time_pool', type=int, default=1,
+                    help='average-pool the fbank along time by this factor. Use 2 (1024->512) '
+                         'for --decoder mamba: the decoder rejects 1024x128 but accepts '
+                         '512x128 (measured). Keeps all 128 mel bins and float precision.')
     ap.add_argument('--tag', default='ast')
     ap.add_argument('--out_dir', default=None)
     ap.add_argument('--build_cache_only', action='store_true')
@@ -374,13 +452,27 @@ def main():
     anoms = np.array([it[3] for it in items], dtype=np.int64)
 
     mk = lambda idx, bs, sh: torch.utils.data.DataLoader(
-        FbankSet(mm, idx, sec_ids, cls_names, anoms), batch_size=bs, shuffle=sh,
-        num_workers=args.workers, pin_memory=True, drop_last=False)
+        FbankSet(mm, idx, sec_ids, cls_names, anoms, args.time_pool), batch_size=bs,
+        shuffle=sh, num_workers=args.workers, pin_memory=True, drop_last=False)
     train_loader = mk(tr_idx, args.batch, True)
     train_eval_loader = mk(tr_idx, args.batch_eval, False)
     test_loader = mk(te_idx, args.batch_eval, False)
 
-    if args.backbone == 'ast':
+    if args.decoder == 'mamba':
+        from model import get_model
+        mcfg = build_cfg_for_model(args.mamba_cfg)
+        mnet = get_model(mcfg.model).to(device)
+        mnet.frozen_layers = []                      # stop MAMBAAD.train() re-freezing net_t
+        for p in mnet.net_t.parameters():
+            p.requires_grad = True
+        with torch.no_grad():                        # in_dim from the student's real output
+            probe = torch.zeros(2, 3, 1024 // args.time_pool, 128, device=device)
+            fs = mnet.net_s(mnet.mff_oce(mnet.net_t(probe)))
+            in_dim = sum(f.shape[1] for f in fs)
+        print(f'[rungH] student feature dims {[tuple(f.shape[1:]) for f in fs]} -> in_dim {in_dim}')
+        model = MambaOnFbankNet(mnet, in_dim, len(sections), args.embed_dim, args.sub,
+                                args.arc_s, args.arc_m).to(device)
+    elif args.backbone == 'ast':
         model = ASTSectionNet(len(sections), args.embed_dim, args.sub,
                               args.arc_s, args.arc_m).to(device)
     else:
@@ -392,12 +484,9 @@ def main():
 
     out_dir = args.out_dir or os.path.join('runs', 'section_rungG', f'{args.tag}_seed{args.seed}')
     os.makedirs(out_dir, exist_ok=True)
-    print(f'[train] backbone={args.backbone.upper()} + '
-          f'ArcFace(s={args.arc_s},m={args.arc_m},sub={args.sub})  '
-          f'epochs={args.epochs} lr_bb={args.lr_ast} llrd={args.llrd} lr_head={args.lr_head} '
-          f'amp={amp_dtype}'
-          + ('   [PNG-vs-wav CONTROL: Rung B encoder on Rung G input]'
-             if args.backbone != 'ast' else ''))
+    print(f'[train] {run_name(args)}  ArcFace(s={args.arc_s},m={args.arc_m},sub={args.sub})  '
+          f'epochs={args.epochs} lr_enc={args.lr_ast} llrd={args.llrd} lr_head={args.lr_head} '
+          f'time_pool={args.time_pool} amp={amp_dtype}')
     print(f'[aug]   mixup={args.mixup}  (crop/masking deliberately OFF -- Phase 0)')
     json.dump(dict(mixup=args.mixup, crop_mask='off (Phase 0 negative)', seed=args.seed,
                    lr_ast=args.lr_ast, llrd=args.llrd, tap='ast_meanpatch'),
@@ -411,6 +500,9 @@ def main():
     open(id_path, 'w').write('epoch,section,n,neg_cos,maha_embed\n')
     sec_path = os.path.join(out_dir, 'asnorm_by_section.csv')
     open(sec_path, 'w').write('epoch,mode,section,n,auroc\n')
+    fold_path = os.path.join(out_dir, 'meanid_folds.csv')
+    open(fold_path, 'w').write('epoch,mode,meanid_full,meanid_foldA,meanid_foldB\n')
+    fold = None
 
     best = defaultdict(lambda: (-1.0, -1, None))
     for ep in range(1, args.epochs + 1):
@@ -473,6 +565,21 @@ def main():
             all_sc = score_all_modes(Ete_, cls_te_, sec_te_, Etr, cls_tr, sec_tr_)
             for mode, sc in all_sc.items():
                 as_res['as_' + mode] = auroc_by_class(sc, cls_te_, y_, CLASSES, roc_auc_score)
+            # ---- held-out epoch selection bookkeeping ----
+            # "Best epoch" has been chosen ON THE TEST SET throughout this campaign, worth
+            # ~+0.7 AUROC of pure optimism (91.38 test-selected vs 90.70 at the final epoch).
+            # So log the STgram-convention mean-of-ID metric on each half of a fixed
+            # section x label stratified split. Choosing the epoch on one half and reporting
+            # the other is then pure post-processing -- see docs/select_heldout_epoch.py.
+            if fold is None:
+                fold = make_folds(sec_te_, y_, seed=0)
+                np.save(os.path.join(out_dir, 'test_fold.npy'), fold)
+            with open(fold_path, 'a') as f:
+                for mode, sc in all_sc.items():
+                    full = meanid_auroc(sc, sec_te_, cls_te_, y_, CLASSES, roc_auc_score)
+                    a = meanid_auroc(sc, sec_te_, cls_te_, y_, CLASSES, roc_auc_score, fold == 0)
+                    b = meanid_auroc(sc, sec_te_, cls_te_, y_, CLASSES, roc_auc_score, fold == 1)
+                    f.write(f'{ep},{mode},{full["mean"]:.4f},{a["mean"]:.4f},{b["mean"]:.4f}\n')
             with open(sec_path, 'a') as f:
                 for mode, sc in all_sc.items():
                     for s_, (n_, a_) in auroc_by_section(sc, sec_te_, y_, roc_auc_score).items():
@@ -516,18 +623,14 @@ def main():
         for row in rows:
             f.write(','.join(str(x).strip() for x in row) + '\n')
     bm, bep, _ = max(best.values(), key=lambda t: t[0])
-    name = 'Rung G (AST)' if args.backbone == 'ast' else 'CONTROL (ResNet34 on fbank)'
-    print(f'\n{name} best = {bm * 100:.2f}% @ epoch {bep}')
-    if args.backbone == 'ast':
-        print(f'  vs Rung B 85.89% (3-seed) -> {bm * 100 - 85.89:+.2f}  (encoder AND input; '
-              f'subtract the ResNet34-on-fbank control to isolate the encoder)')
-    else:
-        print(f'  vs Rung B 85.89% (3-seed) -> {bm * 100 - 85.89:+.2f}  (same encoder as Rung B, '
-              f'so this is the INPUT PIPELINE + recipe, NOT the encoder)')
-    print(f'  vs STgram 90.75%          -> {bm * 100 - 90.75:+.2f}  (remaining gap)')
+    print(f'\n{run_name(args)}')
+    print(f'  best (POOLED, test-selected) = {bm * 100:.2f}% @ epoch {bep}')
+    print(f'  [!] this is the OPTIMISTIC convention -- epoch chosen on the test set, worth '
+          f'~+0.7 AUROC.\n      Run  python docs/select_heldout_epoch.py {out_dir}  for the '
+          f'honest held-out number,\n      and compare on mean-of-per-ID (meanid_folds.csv), '
+          f'which is STgram-MFN 90.75\'s own convention.')
     if bep == args.epochs:
-        print(f'  [WARNING] peak is at the FINAL epoch -- the run is truncated, not converged. '
-              f'Re-run with more epochs before quoting this number.')
+        print(f'  [WARNING] peak is at the FINAL epoch -- truncated, not converged.')
 
 
 if __name__ == '__main__':
