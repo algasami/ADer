@@ -330,6 +330,7 @@ def main():
     ap.add_argument('--lr_head', type=float, default=1e-3)
     ap.add_argument('--llrd', type=float, default=0.85, help='layer-wise lr decay factor')
     ap.add_argument('--wd', type=float, default=1e-4)
+    ap.add_argument('--clip', type=float, default=5.0, help='grad-norm clip (0 disables)')
     ap.add_argument('--mixup', type=float, default=0.2,
                     help='Phase 0 verdict: mixup is the useful half of augmentation; the '
                          'crop/mask half is a net negative and is deliberately absent')
@@ -390,9 +391,12 @@ def main():
 
     out_dir = args.out_dir or os.path.join('runs', 'section_rungG', f'{args.tag}_seed{args.seed}')
     os.makedirs(out_dir, exist_ok=True)
-    print(f'[train] AST + ArcFace(s={args.arc_s},m={args.arc_m},sub={args.sub})  '
-          f'epochs={args.epochs} lr_ast={args.lr_ast} llrd={args.llrd} lr_head={args.lr_head} '
-          f'amp={amp_dtype}')
+    print(f'[train] backbone={args.backbone.upper()} + '
+          f'ArcFace(s={args.arc_s},m={args.arc_m},sub={args.sub})  '
+          f'epochs={args.epochs} lr_bb={args.lr_ast} llrd={args.llrd} lr_head={args.lr_head} '
+          f'amp={amp_dtype}'
+          + ('   [PNG-vs-wav CONTROL: Rung B encoder on Rung G input]'
+             if args.backbone != 'ast' else ''))
     print(f'[aug]   mixup={args.mixup}  (crop/masking deliberately OFF -- Phase 0)')
     json.dump(dict(mixup=args.mixup, crop_mask='off (Phase 0 negative)', seed=args.seed,
                    lr_ast=args.lr_ast, llrd=args.llrd, tap='ast_meanpatch'),
@@ -408,7 +412,7 @@ def main():
     best = defaultdict(lambda: (-1.0, -1, None))
     for ep in range(1, args.epochs + 1):
         model.train()
-        tot, correct, loss_sum = 0, 0, 0.0
+        tot, correct, loss_sum, skipped = 0, 0, 0.0, 0
         for x, y, _ in train_loader:
             x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
             if x.size(0) == 1:
@@ -418,8 +422,17 @@ def main():
             with torch.autocast('cuda', dtype=amp_dtype):
                 emb = model.embed(x)
                 loss = mixup_arcface_loss(model, emb, y, y_b, lam, ce)
-            opt.zero_grad()
+            opt.zero_grad(set_to_none=True)
             loss.backward()
+            gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
+            # Non-finite guard, mirroring trainer/_base_trainer.py. Without it the
+            # ResNet control diverged at epoch 15 (loss->nan, train acc 98->72) and the
+            # run died much later inside the Mahalanobis fit with "SVD did not converge",
+            # losing every epoch of work. Skip the bad step instead.
+            if not (torch.isfinite(loss) and torch.isfinite(gnorm)):
+                skipped += 1
+                opt.zero_grad(set_to_none=True)
+                continue
             opt.step()
             with torch.no_grad():
                 logits = model.logits(emb.detach().float())
@@ -434,9 +447,15 @@ def main():
             continue
         test_pack = collect(model, test_loader, device, meta, True, amp_dtype)
         Etr, _, cls_tr, _, _ = collect(model, train_eval_loader, device, meta, False, amp_dtype)
-        train_pack = (Etr, cls_tr)
-        res = score_epoch(model, test_pack, sec2idx, model.arc.s, train_pack, True)
-        id_res = id_level_auroc(test_pack, sec2idx, model.arc.s, train_pack, True)
+        # A non-finite embedding makes fit_mahalanobis raise "SVD did not converge",
+        # which killed the whole run. Degrade to the finite readouts and keep going --
+        # a diverged epoch should cost one row, not every epoch already computed.
+        finite = np.isfinite(Etr).all() and np.isfinite(test_pack[0]).all()
+        if not finite:
+            print(f'  [warn] epoch {ep}: non-finite embeddings -- skipping maha this epoch')
+        train_pack = (Etr, cls_tr) if finite else None
+        res = score_epoch(model, test_pack, sec2idx, model.arc.s, train_pack, finite)
+        id_res = id_level_auroc(test_pack, sec2idx, model.arc.s, train_pack, finite)
 
         with open(curve_path, 'a') as f:
             for r, d in res.items():
@@ -451,8 +470,8 @@ def main():
                 best[r] = (d['mean'], ep, {c: d.get(c) for c in CLASSES})
         msg = '  '.join(f'{r}={res[r]["mean"] * 100:.2f}' for r in
                         ('neg_cos', 'logit_nll', 'maha_embed') if r in res)
-        print(f'  epoch {ep:3d}/{args.epochs}  loss={tr_loss:.4f} acc={tr_acc:.2f}%  {msg}',
-              flush=True)
+        print(f'  epoch {ep:3d}/{args.epochs}  loss={tr_loss:.4f} acc={tr_acc:.2f}%  {msg}'
+              + (f'  [skipped {skipped} non-finite steps]' if skipped else ''), flush=True)
 
     rows, header = [], ['readout', 'best_epoch'] + CLASSES + ['mean']
     for r in ('neg_cos', 'logit_nll', 'maha_embed'):
