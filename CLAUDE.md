@@ -26,6 +26,21 @@ checkpoint). Full design rationale: `docs/stgram-mambaad/PLAN.md`.
 > remaining gap to STgram-MFN (−14) is the *learning objective*, not the encoder or input.
 > Full write-up: **`docs/ABLATION_SUMMARY.md`**.
 
+> **UPDATE (2026-08-08, branch `aug-ast-phases`) — two of the claims above are now superseded.**
+> See `NOTE.md` and `docs/plots/phase1_rungG/CONCLUSION.md`.
+> 1. **AST end-to-end is a TIE, not a +5.** Trained end-to-end with the input held identical,
+>    AST 88.28 ± 0.36 (3 seeds) vs ResNet34 88.27 on the same fbanks; run to convergence the
+>    ResNet34 control *wins* (88.65). The +5 is a **frozen-feature** effect that does not survive
+>    fine-tuning — quote "+5 frozen / ~0 end-to-end" and say which regime you mean. (Frozen
+>    rankings mispredict fine-tuned outcomes here in *both* directions — cf. Rung A→B.)
+> 2. **"Input is not a lever" was an artifact of the PNG pipeline.** That conclusion was drawn
+>    entirely from comparisons *between* PNG representations. Leaving PNGs altogether — raw wav →
+>    native 1024×128 kaldi fbank, same encoder — is worth **≈ +1.4**, the largest single lever
+>    measured in this project. Best deployable is now **88.65** (was Rung F 86.62) and the gap to
+>    STgram-MFN is **−2.10** (was −4.13).
+> 3. Also: the ladder A–F trained with **zero augmentation** (see the `_base.py` gotcha below);
+>    mixup alone is worth +1.00 on PNGs (86.89 ± 0.10, 3 seeds — already beats Rung F).
+
 ### Three code surfaces coexist — keep them straight
 - **Root ADer engine** (`run.py`, `configs/`, `model/`, `trainer/`, `data/`, `loss/`, `optim/`,
   `util/`) — the registry-driven training/eval framework. This is what `run.py` drives.
@@ -107,6 +122,21 @@ student, trained with **`CosLoss` under log-term name `cos`**. The base trainer 
 > Gotcha: `update_log_term` silently no-ops when a config's logged term name doesn't match what
 > the trainer computes — a mismatched name means the loss is never logged, with no error. Keep
 > config `loss_terms`/`log_terms` names and the trainer in sync (currently both `cos`).
+
+> **Gotcha: `mimii/_base.py` assigns `self.data.test_transforms = self.data.train_transforms`
+> — the SAME list object.** Training views are therefore fully deterministic and *no config on
+> this track has ever used augmentation*. If you add train-time augmentation, split the two
+> lists first, or you will silently augment the eval path too. (Phase 0 sidestepped this by
+> augmenting the GPU batch inside the training loop — `diagnostics/spec_augment.py` — which
+> leaves the shared engine and every other config untouched.)
+
+**Raw-wav / fbank track (2026-08-08, `diagnostics/section_ast_rungG.py`):** the Phase 1 runs read
+`data/dcase-2020/data_<cls>/<cls>/{train,test}/*.wav` directly instead of the PNGs — split
+verified identical to the image pipeline (20119 normal-train / 10868 test / 23 sections). AST
+kaldi fbanks are cached once to a float16 memmap (`runs/ast_fbank_cache/`, ~8 GB) shared by all
+seeds; **pin worker threads when building it** (`torch.set_num_threads(1)`) or the parallel build
+runs at the serial rate. `--backbone {ast,resnet34}` selects the encoder on identical input,
+which is what makes the encoder comparison attributable.
 
 **Metrics:** current MIMII configs record both the `*_sp_max` and `*_sp_mean` pooling families
 (6 metrics, 42-column `metric.txt`); **older runs recorded sp_max only (21 columns)**, so any
