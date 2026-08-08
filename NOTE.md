@@ -335,3 +335,39 @@ showed was handicapped and whose internal comparisons already yielded one wrong 
 per-section banks, with held-out epoch selection built in, vs the 90.70/91.38 baseline. Watch:
 fbank is 1024×128 vs PNG 256×256, and the scan curves / MFF-OCE pyramid were tuned for
 square-ish feature maps.
+
+## 8/9, 2026 — Rung H: the Mamba decoder COSTS 2.2 AUROC. Campaign verdict.
+
+Writeup: `docs/plots/phase2_asnorm/RUNG_H.md`. True A/B, both arms identical except the decoder
+(fp32, `scan_type=sweep`, lr_head 3e-4, mixup 0.2, fbank 512×128, 30ep, 3 seeds, per-section
+Maha readout, held-out 2-fold epoch selection):
+
+| arm | held-out mean-of-ID | vs STgram 90.75 |
+|---|---|---|
+| baseline (ResNet34 → GAP → ArcFace) | **91.01 ± 0.40** | +0.26 |
+| Rung H (+ MFF/OCE → Mamba student) | **88.79 ± 0.72** | −1.96 |
+| **decoder effect** | **−2.22** | |
+
+~3× the seed spread, holds under every selection rule. Rung H trained cleanly (97–98% train acc,
+ZERO non-finite steps) — a valid run that is simply worse. **Much stronger than the PNG-era tie**
+(E−B = +0.28 ± 0.50 vs a ~86 baseline): here the decoder loses clearly against a baseline that
+beats STgram-MFN.
+
+Three silent defects had to be fixed before it would train at all (none raise an exception):
+1. **autocast NaNs the selective-scan BACKWARD** while the forward stays finite (post-mortem:
+   loss/emb/params/opt-state all finite, `gnorm=nan`) → epoch 1 clean, then ~1250/1258 steps
+   skipped forever. Fix: fp32.
+2. **`SCANS` assumes a square feature map** (`model/mambaad.py:53`, permutation over
+   `size**dim`). On 128×32 the flat length is 4096 = 64² so no exception fires while the curve —
+   computed for 64×64 — silently scrambles space. Only `sweep` is shape-agnostic. The scan-curve
+   ablation's "all five equivalent" was measured on SQUARE inputs and does not transfer.
+3. **`lr_head=1e-3` too high** on fbank (fine for C/E on PNG): train acc FELL 34→24→10 while
+   loss fell. 3e-4 fixes it. The plain encoder trained first time at both lrs and in bf16.
+
+### Campaign bottom line
+**Best deployable: 91.15 ± 0.18** (ResNet34 + fbank 1024×128 + per-section Maha, honest held-out
+epoch selection, 3 seeds) **vs STgram-MFN 90.75 → +0.40.** Lever sizes: per-section bank +1.90,
+input pipeline ~+1.4, recipe (mixup/lr/batch) +1.00, AST encoder 0.00, AS-norm 0.00, Mamba
+decoder **−2.22**. The goal "beat STgram-MFN" is met; the goal "with a MambaAD-adjacent
+architecture" is **not**, and the evidence now says that combination is not reachable on this
+task — the decoder is a liability, not a missing-tuning problem.
