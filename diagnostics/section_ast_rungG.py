@@ -116,6 +116,11 @@ _W = {}      # per-worker state: feature extractor + the memmap opened read-writ
 
 
 def _cache_init(feat_path, shape):
+    # Pin each worker to ONE thread. torchaudio's kaldi fbank goes through torch, which
+    # defaults to one intra-op thread per core -- with N worker processes that is N*cores
+    # threads fighting over the same cores. Unpinned, 12 workers ran at exactly the serial
+    # rate (3.7 clips/s) and drove load average past 380.
+    torch.set_num_threads(1)
     from transformers import ASTFeatureExtractor
     _W['fe'] = ASTFeatureExtractor.from_pretrained(AST_CKPT)
     _W['mm'] = np.memmap(feat_path, dtype=np.float16, mode='r+', shape=shape)
@@ -138,6 +143,9 @@ def build_cache(items, cache_dir, batch=32, procs=12):
     parallel; serially this is ~2.7 h for 31k clips, which would dominate the phase.
     """
     import multiprocessing as mp
+    # belt-and-braces: the env vars must be set before the workers import their BLAS
+    for v in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS'):
+        os.environ.setdefault(v, '1')
     from transformers import ASTFeatureExtractor
     os.makedirs(cache_dir, exist_ok=True)
     feat_path = os.path.join(cache_dir, 'fbank_f16.npy')
