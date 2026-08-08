@@ -295,3 +295,43 @@ mixup). Writeup: `docs/plots/phase0_aug/CONCLUSION.md`.
 3. Phase 2 fusion: AST + ResNet34 over one input, held-out per-class readout (Rung F mechanism).
 4. Open: 3 seeds for the fbank control (currently 1); a clean input-only run that also holds
    optimizer/AMP fixed.
+
+## 8/8, 2026 — Phase 2 step 1: per-section Maha banks. We MATCH STgram-MFN. Still no Mamba.
+
+Writeup: `docs/plots/phase2_asnorm/CONCLUSION.md`. Code: `diagnostics/asnorm.py`.
+
+Every readout A–G fit its Maha bank **per class**, but a class pools 3–4 machine units whose
+normal sound genuinely differs, so the bank models a mixture rather than any real machine.
+Fitting **per section** (type×id) instead, ResNet34 on fbank, 3 seeds, mean-of-per-ID AUROC:
+
+| readout | best-ep (test-selected) | final-ep (no selection) |
+|---|---|---|
+| `class_raw` (existing) | 89.34 ± 0.27 | 88.99 ± 0.06 |
+| `section_asnorm` | 91.38 ± 0.21 | **90.70 ± 0.19** |
+| bank lever | +2.04 | **+1.72** |
+
+- **AS-norm itself is worth 0** on the per-ID metric and provably must be — AUROC within a
+  section is invariant under a strictly increasing per-section transform. It only moves the
+  *pooled* metric (+0.3–0.5). Still needed as a prerequisite for score fusion.
+- **ToyConveyor 69.0 → 76.2.** The "structural floor" (id_02 hard for STgram-MFN too) was
+  substantially a **pooled-bank artifact**, not a data property. Revises the frontier writeup.
+- **TRAP 1 — metric mismatch.** STgram-MFN reports the **mean of per-ID AUROCs**; this campaign
+  computes the **pooled-clip AUROC**. Per-section scoring flatters the pooled one specifically.
+  Checked: they agree closely here (88.65 vs 88.96; 91.16 vs 91.17), so earlier comparisons were
+  not materially wrong — but always recompute mean-of-ID before comparing.
+- **TRAP 2 — "best epoch" is selected on TEST, worth ~+0.7 of pure optimism.** best-ep 91.38
+  (+0.63 vs STgram) but final-ep 90.70 (−0.05), last-20 mean 90.71, last-20 worst 90.26.
+  **So the defensible claim is MATCH (90.70 vs 90.75), not beat. Do not quote 91.38.** A real
+  held-out epoch selection should land in 90.70–91.38; that measurement does not exist yet.
+- AST with the same bank: 90.44 — encoder verdict from Phase 1 unchanged.
+
+### Scope flag (raised by the user): none of this contains Mamba
+Goal is to match/beat STgram-MFN **with a MambaAD-adjacent architecture**; the 90.70 model is
+ResNet34 + ArcFace + per-section Maha, i.e. a baseline, not a MambaAD contribution. The ladder
+walked away from Mamba one defensible step at a time (C 84.4 < B 85.9; E−B = +0.28 ± 0.50 tie;
+D negative). **But every Mamba result (C/D/E/F) was measured on the PNG pipeline**, which Phase 1
+showed was handicapped and whose internal comparisons already yielded one wrong conclusion
+("input is not a lever"). Proposed **Rung H** = Rung E/F architecture on fbank + mixup +
+per-section banks, with held-out epoch selection built in, vs the 90.70/91.38 baseline. Watch:
+fbank is 1024×128 vs PNG 256×256, and the scan curves / MFF-OCE pyramid were tuned for
+square-ish feature maps.
