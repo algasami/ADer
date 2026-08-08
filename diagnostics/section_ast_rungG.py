@@ -194,6 +194,48 @@ class FbankSet(torch.utils.data.Dataset):
 # --------------------------------------------------------------------------- #
 # model
 # --------------------------------------------------------------------------- #
+class ResNetOnFbankNet(nn.Module):
+    """CONTROL for the PNG-vs-wav confound.
+
+    Rung B read 8-bit PNGs; Rung G reads raw wavs. So a Rung G gain could be the encoder
+    (AST) OR just the removal of PNG quantization / the resize to 256x256. This model is
+    ResNet34 -- Rung B's exact encoder and head -- fed the SAME cached AST fbanks that
+    Rung G sees. Rung G minus this control is attributable to the encoder alone; this
+    control minus Rung B is attributable to the input pipeline.
+
+    The fbank is 1-channel (1024 frames x 128 mels), replicated to 3 channels. It is
+    normalized with AudioSet statistics rather than ImageNet ones, which is the point --
+    the input is held identical to Rung G's.
+    """
+
+    def __init__(self, n_classes, embed_dim=128, sub=2, s=30.0, m=0.5,
+                 ckpt='model/pretrain/resnet34-43635321.pth'):
+        super().__init__()
+        import timm
+        from timm.models._helpers import load_checkpoint
+        self.backbone = timm.create_model('resnet34', pretrained=False,
+                                          features_only=True, out_indices=[1, 2, 3])
+        if os.path.isfile(ckpt):
+            load_checkpoint(self.backbone, ckpt, strict=False)
+            print(f'[backbone] loaded ImageNet weights: {ckpt}')
+        else:
+            print(f'[backbone] WARNING: {ckpt} missing; ImageNet init absent.')
+        d = sum(self.backbone.feature_info.channels())
+        self.in_bn = nn.BatchNorm1d(d)
+        self.proj = nn.Linear(d, embed_dim)
+        self.emb_bn = nn.BatchNorm1d(embed_dim)
+        self.arc = ArcMarginProduct(embed_dim, n_classes, s=s, m=m, sub=sub)
+
+    def embed(self, x):
+        x = x.unsqueeze(1).repeat(1, 3, 1, 1)        # (B,1024,128) -> (B,3,1024,128)
+        feats = self.backbone(x)
+        gap = torch.cat([f.mean(dim=(2, 3)) for f in feats], dim=1)
+        return self.emb_bn(self.proj(self.in_bn(gap)))
+
+    def logits(self, emb, label=None):
+        return self.arc(emb, label) if label is not None else self.arc.s * self.arc.cosine(emb)
+
+
 class ASTSectionNet(nn.Module):
     """Trainable AST -> mean patch tokens -> Linear -> BN -> ArcFace. Mirrors Rung B's
     SectionNet, minus the multi-stage GAP concat (AST has no spatial pyramid)."""
@@ -220,6 +262,11 @@ class ASTSectionNet(nn.Module):
 def param_groups(model, lr_ast, lr_head, llrd):
     """Layer-wise lr decay over the transformer blocks: a ViT fine-tuned on ~20k clips
     wants the early blocks moving far slower than the head, or it forgets AudioSet."""
+    if not hasattr(model, 'ast'):        # ResNet control: Rung B's two-group split
+        bb = [p for p in model.backbone.parameters() if p.requires_grad]
+        head = [p for n, p in model.named_parameters()
+                if p.requires_grad and not n.startswith('backbone.')]
+        return [{'params': bb, 'lr': lr_ast}, {'params': head, 'lr': lr_head}]
     blocks = model.ast.encoder.layer
     n = len(blocks)
     groups, seen = [], set()
@@ -288,6 +335,9 @@ def main():
                          'crop/mask half is a net negative and is deliberately absent')
     ap.add_argument('--eval_every', type=int, default=1)
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--backbone', default='ast', choices=['ast', 'resnet34'],
+                    help="'resnet34' is the PNG-vs-wav control: Rung B's encoder on the "
+                         'SAME fbanks AST sees, so Rung G minus this isolates the encoder')
     ap.add_argument('--tag', default='ast')
     ap.add_argument('--out_dir', default=None)
     ap.add_argument('--build_cache_only', action='store_true')
@@ -328,8 +378,12 @@ def main():
     train_eval_loader = mk(tr_idx, args.batch_eval, False)
     test_loader = mk(te_idx, args.batch_eval, False)
 
-    model = ASTSectionNet(len(sections), args.embed_dim, args.sub,
-                          args.arc_s, args.arc_m).to(device)
+    if args.backbone == 'ast':
+        model = ASTSectionNet(len(sections), args.embed_dim, args.sub,
+                              args.arc_s, args.arc_m).to(device)
+    else:
+        model = ResNetOnFbankNet(len(sections), args.embed_dim, args.sub,
+                                 args.arc_s, args.arc_m).to(device)
     opt = torch.optim.AdamW(param_groups(model, args.lr_ast, args.lr_head, args.llrd),
                             weight_decay=args.wd)
     ce = nn.CrossEntropyLoss()
