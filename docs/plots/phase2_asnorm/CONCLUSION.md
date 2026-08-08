@@ -47,15 +47,19 @@ wrong — but recompute mean-of-ID before any comparison.
 
 | selection rule | mean-of-ID | vs STgram 90.75 |
 |---|---|---|
-| best epoch, chosen on **test** | 91.38 ± 0.21 | +0.63 |
-| final epoch, no selection | **90.70 ± 0.19** | **−0.05** |
-| mean over last 20 epochs | 90.71 ± 0.17 | −0.04 |
-| worst of last 20 epochs | 90.26 ± 0.20 | −0.49 |
+| best epoch, chosen on **test** (optimistic) | 91.38 ± 0.21 | +0.63 |
+| **held-out 2-fold (HONEST)** | **91.15 ± 0.18** | **+0.40** |
+| final epoch, no selection (floor) | 90.70 ± 0.19 | −0.05 |
 
-> **The defensible claim is that this MATCHES STgram-MFN (90.70 vs 90.75), not that it beats it.**
-> The entire +0.63 margin was epoch-selection optimism. A real held-out epoch selection (Rung F's
-> mechanism applied to the epoch choice) should land between 90.70 and 91.38, but that measurement
-> does not exist yet. **Do not quote 91.38.**
+> **The defensible claim is +0.40 over STgram-MFN, from `runs/section_rungG/rn34fold_seed*`.**
+> Measured with `docs/select_heldout_epoch.py`: the epoch is chosen on one half of a
+> section×label stratified split and scored on the disjoint half, both directions averaged, so
+> no reported number took part in choosing itself. All three seeds are individually above 90.75
+> (90.89 / 91.31 / 91.24). Selection optimism is **+0.23**, not the ~0.7 first inferred from the
+> best-vs-final gap — the final epoch is the no-selection FLOOR, not an honest estimate, and an
+> earlier revision of this file wrongly quoted it as the verdict. **Quote 91.15, not 91.38 and
+> not 90.70.** Under the same honest rule the per-section bank is worth +1.90 (`class_raw`
+> held-out 89.25 -> `section_asnorm` 91.15).
 
 Using machine ID at test time is legitimate: DCASE-2020 task 2 provides it, STgram-MFN uses it
 (its classifier is over machine IDs), and this ladder's `neg_cos` already depended on it.

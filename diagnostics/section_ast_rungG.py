@@ -358,13 +358,13 @@ def param_groups(model, lr_ast, lr_head, llrd):
 
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
-def collect(model, loader, device, meta, need_anom, amp_dtype):
+def collect(model, loader, device, meta, need_anom, amp_dtype, amp_enabled=True):
     """-> (E, L, cls, sec, anom) in the exact tuple layout Rung B's score_epoch expects."""
     model.eval()
     embs, logs, order = [], [], []
     for x, _, j in loader:
         x = x.to(device, non_blocking=True)
-        with torch.autocast('cuda', dtype=amp_dtype):
+        with torch.autocast('cuda', dtype=amp_dtype, enabled=amp_enabled):
             e = model.embed(x)
             l = model.logits(e)
         embs.append(e.float().cpu().numpy())
@@ -401,6 +401,11 @@ def main():
     ap.add_argument('--llrd', type=float, default=0.85, help='layer-wise lr decay factor')
     ap.add_argument('--wd', type=float, default=1e-4)
     ap.add_argument('--clip', type=float, default=5.0, help='grad-norm clip (0 disables)')
+    ap.add_argument('--amp', default='auto', choices=['auto', 'bf16', 'fp16', 'none'],
+                    help="'none' runs fp32. Needed for --decoder mamba: the selective-scan "
+                         'kernel produces a NaN GRADIENT under autocast while the forward '
+                         'stays finite (post-mortem: loss/emb/params/opt-state all finite, '
+                         'gnorm=nan), which stalls training from epoch 2 onward.')
     ap.add_argument('--mixup', type=float, default=0.2,
                     help='Phase 0 verdict: mixup is the useful half of augmentation; the '
                          'crop/mask half is a net negative and is deliberately absent')
@@ -412,6 +417,11 @@ def main():
     ap.add_argument('--decoder', default='none', choices=['none', 'mamba'],
                     help="'mamba' = RUNG H (Rung E/F architecture on the fbank substrate); "
                          "'none' = the plain encoder+head baseline arm")
+    ap.add_argument('--scan_type', default='sweep',
+                    choices=['sweep', 'scan', 'zigzag', 'zorder', 'hilbert'],
+                    help="only 'sweep' (raster) is correct for NON-SQUARE feature maps; the "
+                         'others build their permutation assuming a square grid and silently '
+                         'scramble space when it is not (see the note at the call site)')
     ap.add_argument('--mamba_cfg', default='MambaAD/configs/mambaad/mimii/e50/log-Mel.py',
                     help='config used ONLY to instantiate MAMBAAD, not to load data')
     ap.add_argument('--time_pool', type=int, default=1,
@@ -429,7 +439,15 @@ def main():
     np.random.seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    if args.amp == 'auto':
+        # Mamba's selective-scan backward emits NaN gradients under autocast (forward
+        # stays finite), so the decoder arm defaults to fp32 unless overridden.
+        args.amp = 'none' if args.decoder == 'mamba' else 'bf16'
+    amp_enabled = args.amp != 'none'
+    amp_dtype = {'bf16': torch.bfloat16, 'fp16': torch.float16,
+                 'none': torch.float32}[args.amp]
+    if args.amp == 'bf16' and not torch.cuda.is_bf16_supported():
+        amp_dtype = torch.float16
 
     items = list_items(args.data_root, CLASSES)
     sections = sorted({s for _, _, s, _, _ in items})
@@ -461,6 +479,18 @@ def main():
     if args.decoder == 'mamba':
         from model import get_model
         mcfg = build_cfg_for_model(args.mamba_cfg)
+        # SCANS (model/mambaad.py:53) builds its permutation over `size ** dim`, i.e. it
+        # ASSUMES A SQUARE feature map. On a 128x32 map (512x128 input) the flat length
+        # happens to match 64*64, so no exception is raised -- but the curve is computed
+        # for a 64x64 layout and applied to a 128x32 tensor, silently scrambling space.
+        # (1024x128 -> 256x32 = 8192 is not a perfect square, hence the crash there.)
+        # Only 'sweep' (locs_flat = arange, i.e. raster order) is shape-agnostic; 'scan',
+        # 'zigzag', 'zorder' and 'hilbert' all reshape to size x size. The repo's
+        # scan-curve ablation found all five equivalent, but that was on SQUARE inputs.
+        mcfg.model.kwargs['model_s']['scan_type'] = args.scan_type
+        print(f"[rungH] scan_type={args.scan_type}"
+              + ('' if args.scan_type == 'sweep' else
+                 '   [WARNING] non-sweep curves assume a square feature map'))
         mnet = get_model(mcfg.model).to(device)
         mnet.frozen_layers = []                      # stop MAMBAAD.train() re-freezing net_t
         for p in mnet.net_t.parameters():
@@ -486,7 +516,7 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     print(f'[train] {run_name(args)}  ArcFace(s={args.arc_s},m={args.arc_m},sub={args.sub})  '
           f'epochs={args.epochs} lr_enc={args.lr_ast} llrd={args.llrd} lr_head={args.lr_head} '
-          f'time_pool={args.time_pool} amp={amp_dtype}')
+          f'time_pool={args.time_pool} amp={args.amp}')
     print(f'[aug]   mixup={args.mixup}  (crop/masking deliberately OFF -- Phase 0)')
     json.dump(dict(mixup=args.mixup, crop_mask='off (Phase 0 negative)', seed=args.seed,
                    lr_ast=args.lr_ast, llrd=args.llrd, tap='ast_meanpatch'),
@@ -514,7 +544,7 @@ def main():
                 continue                                  # BatchNorm needs >1 sample
             x, perm, lam = mixup_batch(x, args.mixup)
             y_b = y[perm] if perm is not None else None
-            with torch.autocast('cuda', dtype=amp_dtype):
+            with torch.autocast('cuda', dtype=amp_dtype, enabled=amp_enabled):
                 emb = model.embed(x)
                 loss = mixup_arcface_loss(model, emb, y, y_b, lam, ce)
             opt.zero_grad(set_to_none=True)
@@ -525,6 +555,24 @@ def main():
             # run died much later inside the Mahalanobis fit with "SVD did not converge",
             # losing every epoch of work. Skip the bad step instead.
             if not (torch.isfinite(loss) and torch.isfinite(gnorm)):
+                if skipped == 0:
+                    # One-shot post-mortem on the FIRST bad step. The key question is
+                    # whether the weights are ALREADY non-finite: if so, some earlier
+                    # step corrupted them despite the guard (e.g. the optimizer state
+                    # overflowed), and skipping steps can never recover -- every
+                    # subsequent forward is NaN, which is exactly the 1250/1258 pattern.
+                    bad_p = [n for n, p in model.named_parameters()
+                             if not torch.isfinite(p).all()]
+                    bad_o = sum(1 for st in opt.state.values()
+                                for v in st.values()
+                                if torch.is_tensor(v) and not torch.isfinite(v).all())
+                    print(f'  [postmortem] ep{ep} first non-finite step: '
+                          f'loss_finite={bool(torch.isfinite(loss))} '
+                          f'gnorm={gnorm.item():.4g} '
+                          f'emb_finite={bool(torch.isfinite(emb).all())} '
+                          f'x_finite={bool(torch.isfinite(x).all())} | '
+                          f'non-finite PARAMS={len(bad_p)} (first: {bad_p[:3]}) | '
+                          f'non-finite OPT-STATE tensors={bad_o}', flush=True)
                 skipped += 1
                 opt.zero_grad(set_to_none=True)
                 continue
@@ -540,12 +588,12 @@ def main():
         if ep % args.eval_every != 0 and ep != args.epochs:
             print(f'  epoch {ep:3d}/{args.epochs}  loss={tr_loss:.4f} acc={tr_acc:.2f}%')
             continue
-        test_pack = collect(model, test_loader, device, meta, True, amp_dtype)
+        test_pack = collect(model, test_loader, device, meta, True, amp_dtype, amp_enabled)
         # NOTE: collect() returns rows in DataLoader order, not item order, so the section
         # labels must come from collect too -- deriving them from `items` would misalign
         # every train embedding with the wrong section, silently.
         Etr, _, cls_tr, sec_tr_, _ = collect(model, train_eval_loader, device, meta, False,
-                                             amp_dtype)
+                                             amp_dtype, amp_enabled)
         # A non-finite embedding makes fit_mahalanobis raise "SVD did not converge",
         # which killed the whole run. Degrade to the finite readouts and keep going --
         # a diverged epoch should cost one row, not every epoch already computed.
