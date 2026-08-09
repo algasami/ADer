@@ -24,7 +24,8 @@ checkpoint). Full design rationale: `docs/stgram-mambaad/PLAN.md`.
 > is the backbone (AST, +5 — measured frozen-probe; **end-to-end training was deliberately
 > skipped to save time, so this is an open lever, not a negative result**); the dominant
 > remaining gap to STgram-MFN (−14) is the *learning objective*, not the encoder or input.
-> Full write-up: **`docs/ABLATION_SUMMARY.md`**.
+> Full write-up: **`docs/ABLATION_SUMMARY.md`** (SUPERSEDED — see
+> **`docs/FINAL_REPORT.md`** for the final consolidated result).
 
 > **UPDATE (2026-08-08, branch `aug-ast-phases`) — two of the claims above are now superseded.**
 > See `NOTE.md` and `docs/plots/phase1_rungG/CONCLUSION.md`.
@@ -180,7 +181,8 @@ non-MIMII configs are unaffected by the scorer registry.
 
 - `NOTE.md` is the running, dated research log — check the latest entries for current direction
   and known issues, and append there when direction changes.
-- `docs/ABLATION_SUMMARY.md` is the **consolidated results doc** (all ablation fronts in one place:
+- **`docs/FINAL_REPORT.md` is the final consolidated report — read this first.**
+  `docs/ABLATION_SUMMARY.md` is the older (2026-07-25, now superseded) results doc (all ablation fronts in one place:
   lever table, gap decomposition, per-class ceilings, conclusions). Read this first for the big
   picture; `NOTE.md` for the dated blow-by-blow.
 - `docs/stgram-mambaad/PLAN.md` is the design doc for the STgram→MambaAD pipeline.

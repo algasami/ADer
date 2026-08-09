@@ -1,5 +1,20 @@
 # MambaAD-on-MIMII — Ablation Campaign Summary
 
+> ## ⚠ SUPERSEDED — read [`docs/FINAL_REPORT.md`](FINAL_REPORT.md) first
+>
+> This document reflects the state on **2026-07-25**, before branch `aug-ast-phases`. Three of
+> its conclusions have since been overturned by measurement:
+>
+> | this doc says | actually |
+> |---|---|
+> | AST is a +5 lever (frozen probe, untested end-to-end) | **+0.01 end-to-end**; +5 is a frozen-feature effect that does not transfer |
+> | input representation is not a lever | true only *among PNG variants*; leaving PNGs is worth **≈ +1.4**, the largest representation lever |
+> | the ladder plateaus ~4 below STgram-MFN | final system is **91.15 ± 0.18 vs 90.75 = +0.40** |
+>
+> Also: every number in this document is pooled-clip AUROC with the **epoch chosen on the test
+> set** (~+0.23 optimism), whereas STgram-MFN reports the mean of per-ID AUROCs. The historical
+> rungs have not been re-scored under the honest rule.
+
 _As of 2026-07-25. Consolidates every ablation front run to date. Companion to `NOTE.md`
 (dated log) and `docs/stgram-mambaad/PLAN.md` (design). Numbers are image-level AUROC (%),
 averaged over the 6 MIMII classes unless noted._
