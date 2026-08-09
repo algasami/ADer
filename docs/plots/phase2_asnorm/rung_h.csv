@@ -1,0 +1,7 @@
+run,mode,test_selected,heldout,final,ep_test,ep_A,ep_B,arm
+baseH2_seed0,section_asnorm,91.31,91.185,90.85,27,27,25,baseline (no decoder)
+baseH2_seed1,section_asnorm,91.38,91.39500000000001,90.92,29,29,29,baseline (no decoder)
+baseH2_seed2,section_asnorm,90.79,90.46499999999999,90.28,17,17,18,baseline (no decoder)
+rungH2_seed0,section_asnorm,88.08,87.81,87.72,28,20,28,Rung H (Mamba student)
+rungH2_seed1,section_asnorm,89.11,89.035,89.11,30,30,29,Rung H (Mamba student)
+rungH2_seed2,section_asnorm,89.46,89.515,87.28,23,23,23,Rung H (Mamba student)

@@ -1,5 +1,8 @@
 # Rung H — does the Mamba decoder add anything on a fair substrate?
 
+> **Figure:** `rung_h.png` (+ `rung_h.csv`) — curves, all three selection rules, and the
+> train-accuracy panel. `python docs/plot_phase2_asnorm.py --figs rungh`.
+
 Branch `aug-ast-phases`. The project goal is to match or beat STgram-MFN **with a
 MambaAD-adjacent architecture**, but the ladder had walked away from Mamba one defensible step
 at a time, and by Phase 2 the best model contained none. Every prior Mamba verdict (rungs

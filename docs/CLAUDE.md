@@ -11,5 +11,14 @@
   `run_scorer_ablation.sh` + `plot_scorer_ablation.py`, `run_scan_ablation.sh` +
   `plot_scan_ablation.py`, and `plot_backbone_ablation.py` (reads `runs/audio_probe/`).
 
+- **Phase 1 / Phase 2 figures** — `plot_phase1_rungG.py` and `plot_phase2_asnorm.py` write the
+  figures + CSVs into `docs/plots/phase1_rungG/` and `docs/plots/phase2_asnorm/` (those folders
+  were prose-only until 2026-08-10). Both read only the per-run CSVs (`metric_curve.csv`,
+  `meanid_folds.csv`, `asnorm_by_section.csv`, `train_log.csv`) plus STgram-MFN's own
+  `runs/STgram-MFN(m=0.7,s=30)/running.log`, which evaluates every 10 epochs and is what makes
+  the epoch-for-epoch baseline comparison possible — **nothing is retrained**. Note the two
+  scripts use different scoring conventions on purpose: Phase 1 quotes the ladder's
+  best-readout/best-epoch-on-test number, Phase 2 quotes the held-out rule.
+
 Remember the run-comparison rule from the root `CLAUDE.md`: AUROC peaks early and there is no
 best-checkpoint selection, so compare runs at their peaks — plot first.

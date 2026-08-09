@@ -1,5 +1,11 @@
 # Phase 2, step 1 — per-section Mahalanobis banks and AS-norm
 
+> **Figures** (regenerate with `python docs/plot_phase2_asnorm.py`, from the run CSVs — no
+> retraining): `bank_lever.png` (+ `bank_lever.csv`, `bank_lever_per_section.csv`) for the
+> bank/AS-norm result below; `vs_stgram.png` (+ `stgram_epoch_curve.csv`,
+> `vs_stgram_per_section.csv`) for the epoch-for-epoch STgram-MFN comparison;
+> `rung_h.png` (+ `rung_h.csv`) for `RUNG_H.md`.
+
 Branch `aug-ast-phases`, built on Phase 1's fbank substrate. Code: `diagnostics/asnorm.py`,
 wired into `diagnostics/section_ast_rungG.py`. Runs: `runs/section_rungG/rn34as_seed{0,1,2}`
 (ResNet34, 70 epochs) and `astas_seed0` (AST, 30 epochs).

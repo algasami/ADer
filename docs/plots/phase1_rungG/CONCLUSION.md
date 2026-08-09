@@ -1,5 +1,12 @@
 # Phase 1 — Rung G: AST encoder, and what actually turned out to be the lever
 
+> **Figures** (regenerate with `python docs/plot_phase1_rungG.py`, from the run CSVs — no
+> retraining): `input_lever.png` (+ `input_lever.csv`, `attribution.csv`) for the attribution
+> ladder in Headline 2; `encoder_ab.png` (+ `encoder_per_class.csv`,
+> `frozen_vs_finetuned.csv`) for the encoder A/B, the frozen→fine-tuned reversal, and the lr
+> probe. Both quote the ladder's optimistic convention: best epoch of the best readout, chosen
+> on test.
+
 Branch `aug-ast-phases`. Rung G = Rung B with the encoder swapped: trainable AST (AudioSet)
 → mean patch tokens → Linear → BN → ArcFace over the same 23 machine sections. Same readouts,
 same per-epoch eval, same CSV schema as Rung B. Augmentation = **mixup only**, per the Phase 0
