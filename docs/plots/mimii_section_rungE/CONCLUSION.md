@@ -1,5 +1,11 @@
 # Rung E — B+C combined (fine-tune encoder + Mamba student)
 
+> **SUPERSEDED in part (2026-08-10).** Re-scored under the honest rule (mean-of-per-ID,
+> epoch and readout chosen on a held-out half), **Rung B beats Rung E by 1.45** — the
+> "B ≈ E tie" below was partly an artifact of the pooled-clip / test-selected convention.
+> Rung F's per-class readout policy is worth −0.07, not +0.45. See
+> `docs/plots/ladder_honest/CONCLUSION.md`.
+
 **Question.** Rung B fine-tuned the ResNet *encoder* under the section loss (85.9); Rung C
 trained the Mamba *decoder* on a frozen encoder (84.4). Rung E combines them: fine-tune the
 teacher AND the Mamba student together under the same ArcFace section loss (classification only

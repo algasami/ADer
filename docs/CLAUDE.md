@@ -20,5 +20,21 @@
   scripts use different scoring conventions on purpose: Phase 1 quotes the ladder's
   best-readout/best-epoch-on-test number, Phase 2 quotes the held-out rule.
 
+- **Honest-rule scoring** — `select_heldout_epoch.py` does it for the Phase-2 fbank runs (reads
+  `meanid_folds.csv`, which only the Rung H version of `section_ast_rungG.py` writes).
+  `rescore_ladder.py` (+ `plot_rescore_ladder.py`, driver `run_rescore_ladder.sh`) does it for
+  the PNG ladder A-F from `scores_by_epoch.npz`, and reports pooled-clip vs mean-of-per-ID
+  crossed with test-selected vs held-out. Two things it does that the older script does not:
+  it selects the **readout** on the held-out half as well as the epoch (every rung's headline
+  maximized over both on test), and it averages the estimate over 20 independent fold draws so
+  split noise is not mistaken for a rung difference. Rung F has no run of its own — it is
+  reconstructed as Rung E under the per-class readout policy.
+
+> **Gotcha: the rung scripts truncate their CSVs at startup.** Pointing a re-run at an existing
+> run directory destroys that run's curves the moment it starts (`best_summary.csv` survives —
+> it is written only at the end). `runs/` is gitignored, so there is no undo. Always pass an
+> explicit `--out_dir` when repeating a rung. The July ladder runs are preserved under
+> `runs/section_rung{B,E}/log-Mel*_july2026/`.
+
 Remember the run-comparison rule from the root `CLAUDE.md`: AUROC peaks early and there is no
 best-checkpoint selection, so compare runs at their peaks — plot first.

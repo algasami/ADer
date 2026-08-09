@@ -182,7 +182,10 @@ non-MIMII configs are unaffected by the scorer registry.
 - `NOTE.md` is the running, dated research log — check the latest entries for current direction
   and known issues, and append there when direction changes.
 - **`docs/FINAL_REPORT.md` is the final consolidated report — read this first.**
-  `docs/ABLATION_SUMMARY.md` is the older (2026-07-25, now superseded) results doc (all ablation fronts in one place:
+  Its one outstanding item (§8.1, re-scoring the ladder) was closed on 2026-08-10 by
+  `docs/plots/ladder_honest/CONCLUSION.md`, which also **retires two ladder claims**: Rung B
+  beats Rung E by 1.45 (not "a tie"), and Rung F's per-class readout policy is worth −0.07 (so
+  **86.62 is not a rung** — the previous-best-on-PNG figure to quote is Rung B's 85.99).
   lever table, gap decomposition, per-class ceilings, conclusions). Read this first for the big
   picture; `NOTE.md` for the dated blow-by-blow.
 - `docs/stgram-mambaad/PLAN.md` is the design doc for the STgram→MambaAD pipeline.

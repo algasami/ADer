@@ -57,6 +57,7 @@ from util.metric import Evaluator
 from diagnostics.frozen_encoder_probe import build_cfg, fit_mahalanobis, maha_score
 from diagnostics.section_classifier_probe import parse_section
 from diagnostics.section_finetune_rungB import CLASSES
+from diagnostics.heldout_eval import ScoreDump, clip_keys
 from diagnostics.section_mamba_rungC import MambaSectionNet
 
 
@@ -75,7 +76,7 @@ def _z(v):
 def collect_D(model, loader, device, need_anom, recon_size, gauss):
     """One forward per batch capturing: embedding, logits, recon sp_max/sp_mean, meta."""
     model.eval()
-    E, L, SPMAX, SPMEAN, cls, sec, anom = [], [], [], [], [], [], []
+    E, L, SPMAX, SPMEAN, cls, sec, anom, paths = [], [], [], [], [], [], [], []
     for batch in loader:
         imgs = batch['img'].to(device, non_blocking=True)
         feats_t, feats_s = model.net(imgs)
@@ -90,48 +91,80 @@ def collect_D(model, loader, device, need_anom, recon_size, gauss):
         c = np.array(batch['cls_name'])
         cls.append(c)
         sec.append(np.array([parse_section(cc, p) for cc, p in zip(c, batch['img_path'])]))
+        paths.append(np.array([str(p) for p in batch['img_path']]))
         if need_anom:
             a = batch['anomaly']
             anom.append(a.numpy() if torch.is_tensor(a) else np.array(a))
     d = dict(E=np.concatenate(E).astype(np.float32), L=np.concatenate(L).astype(np.float32),
              spmax=np.concatenate(SPMAX), spmean=np.concatenate(SPMEAN),
-             cls=np.concatenate(cls), sec=np.concatenate(sec))
+             cls=np.concatenate(cls), sec=np.concatenate(sec), path=np.concatenate(paths))
     d['anom'] = np.concatenate(anom).astype(int) if need_anom else None
     return d
 
 
-def score_D(test, sec2idx, s_scale, train=None, eval_maha=False):
-    """All readouts + fusions -> {readout: {class: auroc, 'mean': mean}} (higher=anomalous)."""
+def clip_scores_D(test, sec2idx, s_scale, train=None, eval_maha=False):
+    """{readout: per-clip score array}, higher = anomalous, NaN where undefined.
+
+    Note the fusion readouts z-normalize WITHIN a class, exactly as the original per-class
+    loop did. That is order-preserving inside a class, so every AUROC taken over a class or
+    any subset of one (a section, a fold) is unchanged by storing them as one global array.
+    """
     L, E = test['L'], test['E']
     logp = L - np.log(np.exp(L - L.max(1, keepdims=True)).sum(1, keepdims=True)) - L.max(1, keepdims=True)
     assigned = np.array([sec2idx.get(s, -1) for s in test['sec']])
+    rows = np.arange(len(assigned))
     maha_banks = None
     if eval_maha and train is not None:
         maha_banks = {c: fit_mahalanobis(train['E'][train['cls'] == c])
                       for c in CLASSES if (train['cls'] == c).any()}
-    out = defaultdict(dict)
+
+    n = len(assigned)
+    out = {
+        'recon_spmax': np.asarray(test['spmax'], dtype=np.float64),
+        'recon_spmean': np.asarray(test['spmean'], dtype=np.float64),
+        'neg_cos': -(L[rows, assigned] / s_scale).astype(np.float64),
+        'logit_nll': -logp[rows, assigned].astype(np.float64),
+        'fusion_negcos': np.full(n, np.nan),
+    }
+    if maha_banks is not None:
+        out['maha_embed'] = np.full(n, np.nan)
+        out['fusion_maha'] = np.full(n, np.nan)
     for c in CLASSES:
         m = test['cls'] == c
-        y = test['anom'][m]
-        if y.min() == y.max():
+        if not m.any():
             continue
-        a = assigned[m]
-        recon = test['spmean'][m]
-        negc = -(L[m][np.arange(len(a)), a] / s_scale)
-        nll = -logp[m][np.arange(len(a)), a]
-        out['recon_spmax'][c] = roc_auc_score(y, test['spmax'][m])
-        out['recon_spmean'][c] = roc_auc_score(y, recon)
-        out['neg_cos'][c] = roc_auc_score(y, negc)
-        out['logit_nll'][c] = roc_auc_score(y, nll)
-        out['fusion_negcos'][c] = roc_auc_score(y, _z(recon) + _z(negc))
+        recon = out['recon_spmean'][m]
+        out['fusion_negcos'][m] = _z(recon) + _z(out['neg_cos'][m])
         if maha_banks is not None and c in maha_banks:
             mu, ic = maha_banks[c]
             mah = maha_score(E[m], mu, ic)
-            out['maha_embed'][c] = roc_auc_score(y, mah)
-            out['fusion_maha'][c] = roc_auc_score(y, _z(recon) + _z(mah))
-    for r in list(out.keys()):
-        out[r]['mean'] = float(np.mean([out[r][c] for c in CLASSES if c in out[r]]))
+            out['maha_embed'][m] = mah
+            out['fusion_maha'][m] = _z(recon) + _z(mah)
     return out
+
+
+def auroc_by_class_D(scores, cls_te, y_anom):
+    """{readout: {class: auroc, 'mean': mean}} from per-clip scores."""
+    out = defaultdict(dict)
+    for r, s in scores.items():
+        for c in CLASSES:
+            m = cls_te == c
+            y = y_anom[m]
+            if y.min() == y.max() or not np.isfinite(s[m]).all():
+                continue
+            out[r][c] = roc_auc_score(y, s[m])
+    for r in list(out.keys()):
+        if out[r]:
+            out[r]['mean'] = float(np.mean([out[r][c] for c in CLASSES if c in out[r]]))
+        else:
+            del out[r]
+    return out
+
+
+def score_D(test, sec2idx, s_scale, train=None, eval_maha=False):
+    """All readouts + fusions -> {readout: {class: auroc, 'mean': mean}} (higher=anomalous)."""
+    return auroc_by_class_D(clip_scores_D(test, sec2idx, s_scale, train, eval_maha),
+                            test['cls'], test['anom'])
 
 
 def main():
@@ -152,20 +185,25 @@ def main():
     ap.add_argument('--recon_gauss', type=float, default=4.0)
     ap.add_argument('--eval_every', type=int, default=1)
     ap.add_argument('--eval_maha', action='store_true')
+    ap.add_argument('--no_dump_scores', dest='dump_scores', action='store_false',
+                    help='skip scores_by_epoch.npz (needed for honest held-out re-scoring)')
     ap.add_argument('--recon_baseline', type=float, default=0.72)
     ap.add_argument('--rungB_auroc', type=float, default=0.859)
     ap.add_argument('--rungC_auroc', type=float, default=0.844)
     ap.add_argument('--stgram_auroc', type=float, default=0.9075)
+    ap.add_argument('--seed', type=int, default=0,
+                    help='seed repeat (CUDA is not bit-exact regardless)')
     ap.add_argument('--out_dir', default=None)
     args = ap.parse_args()
 
-    torch.manual_seed(0)
-    np.random.seed(0)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    np.random.seed(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     cfg = build_cfg(args.cfg_path, args.batch, args.workers)
     cfg_name = os.path.splitext(os.path.basename(args.cfg_path))[0]
-    out_dir = args.out_dir or os.path.join('runs', 'section_rungD', cfg_name)
+    out_dir = args.out_dir or os.path.join('runs', 'section_rungD', f'{cfg_name}_seed{args.seed}')
     os.makedirs(out_dir, exist_ok=True)
     print(f"[cfg] {args.cfg_path}  data.root={cfg.data.root}")
 
@@ -204,6 +242,7 @@ def main():
         f.write('epoch,total,cos,ce,acc,skipped\n')
 
     best = defaultdict(lambda: (-1.0, -1, None))
+    dump = None                                   # built at the first eval (needs clip meta)
 
     for ep in range(1, args.epochs + 1):
         model.train()
@@ -241,7 +280,13 @@ def main():
             continue
         test = collect_D(model, test_loader, device, True, args.recon_size, args.recon_gauss)
         train = collect_D(model, train_loader, device, False, args.recon_size, args.recon_gauss) if args.eval_maha else None
-        res = score_D(test, sec2idx, model.arc.s, train, args.eval_maha)
+        sc = clip_scores_D(test, sec2idx, model.arc.s, train, args.eval_maha)
+        res = auroc_by_class_D(sc, test['cls'], test['anom'])
+        if dump is None and args.dump_scores:
+            dump = ScoreDump(out_dir, clip_keys(test['path']), test['cls'], test['sec'],
+                             test['anom'])
+        if dump is not None:
+            dump.add(ep, sc)
         with open(curve_path, 'a') as f:
             for r, d in res.items():
                 f.write(f'{ep},{r},' + ','.join(f'{d.get(c, float("nan")):.4f}' for c in CLASSES)

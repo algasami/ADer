@@ -371,3 +371,59 @@ input pipeline ~+1.4, recipe (mixup/lr/batch) +1.00, AST encoder 0.00, AS-norm 0
 decoder **−2.22**. The goal "beat STgram-MFN" is met; the goal "with a MambaAD-adjacent
 architecture" is **not**, and the evidence now says that combination is not reachable on this
 task — the decoder is a liability, not a missing-tuning problem.
+
+## 8/10, 2026 — Rungs A–F re-scored under the honest rule. B beats E; Rung F was worth nothing.
+
+Closes `FINAL_REPORT.md` §8.1 and the §5 cross-era caveat — the whole ladder is now on the
+final system's footing (mean-of-per-ID, epoch AND readout chosen on a held-out half).
+Writeup: `docs/plots/ladder_honest/CONCLUSION.md`. Code: `docs/rescore_ladder.py`,
+`docs/plot_rescore_ladder.py`, `docs/run_rescore_ladder.sh`, `diagnostics/heldout_eval.py`,
+self-checks `docs/test_rescore_ladder.py`.
+
+**It needed re-runs.** The July runs kept no checkpoints, no per-clip scores and no fold split,
+so neither correction was recoverable from disk. All five rungs were repeated at their original
+hyperparameters with per-clip score dumping (13 runs; seed coverage A×3 B×3 E×3 C×2 D×2, i.e.
+the ladder's own history plus a free second seed for C/D). Rung F has no script and never did —
+it is a post-hoc per-class readout policy over E, reconstructed from E's dumped scores.
+
+| rung | pooled/test (published) | mean-of-ID/test | **mean-of-ID/held-out** |
+|---|---|---|---|
+| A | 79.94 ± 0.12 | 79.73 | **79.74 ± 0.36** |
+| B | 86.66 ± 0.64 | 86.02 | **85.99 ± 0.63** |
+| C | 84.40 ± 0.04 | 83.58 | **83.29 ± 0.10** |
+| D | 84.66 ± 0.43 | 83.91 | **83.43 ± 0.01** |
+| E | 86.01 ± 0.17 | 84.85 | **84.54 ± 0.16** |
+| F  (E + per-class readout) | — | 84.87 | **84.47 ± 0.14** |
+| F+ (per-class epoch too) | — | 88.80 | **88.16 ± 1.22** |
+
+- **B > E by 1.45 under the honest rule** (published convention on the same re-runs: −0.65;
+  July's 3-seed figure: +0.28, "a tie"). Both corrections push the same way and the gap is ~9x
+  E's seed spread. Same direction as Rung H's −2.22 on fbank, so the PNG-era and fbank-era
+  decoder verdicts now AGREE — the "every Mamba result was measured on the handicapped PNG
+  pipeline" worry that motivated Rung H is resolved in Rung H's favour.
+- **Rung F's +0.45 does not survive: F − E = −0.07.** The honest rule picks the same readout as
+  the test-selected rule in all 13 runs (`neg_cos` for A/B, `maha_embed` for C/D/E), so there
+  was no per-class readout disagreement left to exploit. **Do not quote 86.62 as a rung.**
+- **The real headroom is a per-class EPOCH: F+ = +3.61 held-out (88.16, only −2.59 to STgram).**
+  Survives held-out policy selection, so it is not oracle inflation — but it is up to six
+  checkpoints, not one model. Upper bound / motivation for a real per-class early-stopping rule.
+- **The metric correction dominates** (−0.2 to −1.2, always negative). **Selection optimism is
+  ~0 for A/B but +0.29..+0.48 for the Mamba rungs**: A/B win on `neg_cos` (early sharp peak on
+  real signal), C/D/E on `maha_embed` (late flat noisy plateau, winning epochs 15–48). Verified
+  with a planted winners curse (`test_rescore_ladder.py` detects +1.15 by construction), so the
+  ~0 is a property of the curves, not a peeking estimator.
+- Re-run fidelity: Rung A's frozen `maha_concat_raw` is **bit-identical** to July (71.80); the
+  headline readouts land within 0.1–0.8. But `neg_cos` is unstable run-to-run (±3.6, peak epoch
+  9→40) while `maha_embed` is not (±0.6) — a test-selected max over a noisy readout is not a
+  reproducible quantity.
+
+### Damage report (my error, 2026-08-09)
+The re-runs were first pointed at the ladder's existing run dirs; the rung scripts truncate
+their CSVs at startup, so **Rung E seed1/seed2 lost their July `metric_curve.csv`,
+`train_log.csv` and `id_breakdown.csv`** before I redirected them. `runs/` is gitignored. What
+survives: `best_summary.csv` (written only at the end) for both, the salvaged mean-only curves
+in `runs/section_rungE/log-Mel_seed{1,2}_july2026/metric_curve_from_log.csv` (recovered peaks
+85.44 / 86.21 match the published seed-repeat exactly), and full backups of every other July
+dir under `*_july2026/`. Permanently lost: per-epoch per-class AUROC and `logit_nll` for those
+two runs. Gotcha now recorded in `docs/CLAUDE.md`: **always pass an explicit `--out_dir` when
+repeating a rung.**

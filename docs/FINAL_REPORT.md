@@ -12,7 +12,7 @@
 |---|---|---|
 | **Final system** (held-out epoch selection, 3 seeds) | **91.15 ± 0.18** | **+0.40** |
 | STgram-MFN (supervised audio SOTA) | 90.75 | — |
-| Previous best on this fork (Rung F) | 86.62 | −4.13 |
+| Previous best on the PNG track (mixup on Rung B's recipe, 3 seeds) | 86.89 ± 0.10 | −3.86 |
 
 Measured on **STgram-MFN's own metric** (mean of per-machine-ID AUROCs) with the epoch chosen on
 a held-out half of the test split, so no reported number participated in choosing itself. All
@@ -76,7 +76,11 @@ Every entry measured with everything else held fixed.
 
 Prior campaign levers, for completeness: input representation among PNG variants, decoder
 depth, scan curve, schedule, and scorer were all flat (≈72 plateau); the objective/labels axis
-(rungs A→B) was worth ~+14 and remains the single biggest contribution overall.
+(rungs A→B) was worth ~+14 and remains the single biggest contribution overall. Note what that
++14 is measured on: it is the **`maha_embed` readout** going from frozen to fine-tuned (A 67.4
+→ B 82.1 in the re-runs, reproducing the +14.8). On each rung's *best* readout the A→B step is
+**+6.25** under the honest rule (79.74 → 85.99), because Rung A already recovers most of the
+gap through its classification readout alone. Both are true; say which one you mean.
 
 ---
 
@@ -168,10 +172,21 @@ Previously attributed to a dataset property because id_02 is hard for STgram-MFN
 per-section bank lifts ToyConveyor 69.0 → 76.2. The unit is still the weakest, but ~7 points of
 it was the pooled bank.
 
-> **Caveat on cross-era comparisons.** Rungs A–F were scored as pooled-clip AUROC with
-> test-selected epochs. The final numbers here are mean-of-per-ID with held-out selection. Any
-> single table mixing them (including §3's ladder note) mixes conventions. Re-running the
-> historical rungs under the honest rule is the outstanding item for a publication table.
+> **Cross-era comparisons — RESOLVED (2026-08-10).** Rungs A–F were scored as pooled-clip AUROC
+> with test-selected epochs, the final numbers as mean-of-per-ID with held-out selection. The
+> ladder has now been re-run (the originals kept no checkpoints and no per-clip scores, so this
+> could not be done from disk) and re-scored on the final system's footing —
+> `docs/plots/ladder_honest/CONCLUSION.md`:
+>
+> | rung | A | B | C | D | E | F | F+ |
+> |---|---|---|---|---|---|---|---|
+> | mean-of-ID @ held-out | 79.74 | **85.99** | 83.29 | 83.43 | 84.54 | 84.47 | 88.16 |
+>
+> Two published claims do not survive: **B beats E by 1.45** (the "B ≈ E tie" was partly a
+> convention artifact, and the honest verdict now agrees in sign with Rung H's −2.22), and
+> **Rung F's per-class readout policy is worth −0.07, not +0.45** — do not quote 86.62 as a
+> rung. The headroom it was reaching for is real but needs a per-class *epoch* (F+, +3.61
+> held-out), which is up to six checkpoints rather than one model.
 
 ---
 
@@ -216,9 +231,15 @@ it was the pooled bank.
 
 ## 8. If the work continues
 
-1. **Re-score rungs A–F under the honest rule** — needed for any publication table, and it is
-   analysis plus re-runs, not new ideas.
-2. **Sweep `lr_head` on the final system** — the cheapest remaining upside.
+1. ~~**Re-score rungs A–F under the honest rule**~~ — **done 2026-08-10**, see §5 and
+   `docs/plots/ladder_honest/CONCLUSION.md`. The publication table exists; two ladder claims
+   changed. Remaining wrinkle: the ladder's folds are path-keyed while Rung G/H's were
+   index-keyed, so an A–H table still spans two fold definitions.
+2. **A per-class early-stopping rule.** The re-score found +3.61 (held-out) available from
+   choosing the epoch per class — the largest untaken lever on the PNG track, and it survives
+   held-out policy selection. It currently costs six checkpoints; making it one model is the
+   open problem.
+3. **Sweep `lr_head` on the final system** — the cheapest remaining upside.
 3. **Score fusion.** Per-clip scores are now persisted (`scores_best.npz`). Phase 0 and Phase 1
    both found complementary models (augmented vs not; AST vs ResNet34), with per-class oracles
    ~+2 over the best single arm. AS-norm exists precisely to make that fusion well-posed.

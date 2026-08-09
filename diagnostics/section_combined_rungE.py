@@ -51,7 +51,9 @@ from model import get_model
 from data import get_loader
 from diagnostics.frozen_encoder_probe import build_cfg
 from diagnostics.section_classifier_probe import parse_section
-from diagnostics.section_finetune_rungB import collect, score_epoch, id_level_auroc, CLASSES
+from diagnostics.section_finetune_rungB import (collect, clip_scores, auroc_by_class,
+                                                id_level_auroc, CLASSES)
+from diagnostics.heldout_eval import ScoreDump, clip_keys
 from diagnostics.section_mamba_rungC import MambaSectionNet
 
 
@@ -81,6 +83,8 @@ def main():
     ap.add_argument('--wd', type=float, default=1e-4)
     ap.add_argument('--eval_every', type=int, default=1)
     ap.add_argument('--eval_maha', action='store_true')
+    ap.add_argument('--no_dump_scores', dest='dump_scores', action='store_false',
+                    help='skip scores_by_epoch.npz (needed for honest held-out re-scoring)')
     ap.add_argument('--rungB_auroc', type=float, default=0.859)
     ap.add_argument('--rungC_auroc', type=float, default=0.844)
     ap.add_argument('--stgram_auroc', type=float, default=0.9075)
@@ -144,6 +148,7 @@ def main():
         f.write('epoch,section,n,neg_cos,maha_embed\n')
 
     best = defaultdict(lambda: (-1.0, -1, None))
+    dump = None                                   # built at the first eval (needs clip meta)
 
     for ep in range(1, args.epochs + 1):
         model.train()
@@ -174,13 +179,20 @@ def main():
             print(f"  epoch {ep:3d}/{args.epochs}  loss={tr_loss:.4f} acc={tr_acc:.2f}% skip={skipped}")
             continue
         s_scale = model.arc.s
-        test_pack = collect(model, test_loader, device, need_anom=True)
+        test_pack, te_paths = collect(model, test_loader, device, need_anom=True,
+                                      return_paths=True)
         train_pack = None
         if args.eval_maha:
             Etr, _, cls_tr, _, _ = collect(model, train_loader, device, need_anom=False)
             train_pack = (Etr, cls_tr)
-        res = score_epoch(model, test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        sc = clip_scores(test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        res = auroc_by_class(sc, test_pack[2], test_pack[4])
         id_res = id_level_auroc(test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        if dump is None and args.dump_scores:
+            dump = ScoreDump(out_dir, clip_keys(te_paths), test_pack[2], test_pack[3],
+                             test_pack[4])
+        if dump is not None:
+            dump.add(ep, sc)
 
         with open(curve_path, 'a') as f:
             for r, d in res.items():

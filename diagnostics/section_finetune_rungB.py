@@ -69,6 +69,7 @@ from data import get_loader
 from diagnostics.frozen_encoder_probe import build_cfg, fit_mahalanobis, maha_score
 from diagnostics.section_classifier_probe import parse_section, ArcMarginProduct
 from diagnostics.spec_augment import BatchAug, mixup_batch, mixup_arcface_loss
+from diagnostics.heldout_eval import ScoreDump, clip_keys
 
 CLASSES = ["fan", "pump", "slider", "valve", "ToyCar", "ToyConveyor"]
 _FROZEN_PREFIXES = ("conv1", "bn1", "layer1")  # what --freeze_stem pins
@@ -163,8 +164,8 @@ class SectionNet(nn.Module):
 # eval: score the test split with the STgram-style readouts
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
-def collect(model, loader, device, need_anom):
-    embs, logs, clss, secs, anoms = [], [], [], [], []
+def collect(model, loader, device, need_anom, return_paths=False):
+    embs, logs, clss, secs, anoms, paths = [], [], [], [], [], []
     model.eval()
     for batch in loader:
         imgs = batch['img'].to(device, non_blocking=True)
@@ -177,40 +178,72 @@ def collect(model, loader, device, need_anom):
         if need_anom:
             a = batch['anomaly']
             anoms.append(a.numpy() if torch.is_tensor(a) else np.array(a))
+        if return_paths:
+            paths.append(np.array([str(p) for p in batch['img_path']]))
     E = np.concatenate(embs).astype(np.float32)
     L = np.concatenate(logs).astype(np.float32)
     cls = np.concatenate(clss)
     sec = np.concatenate(secs)
     anom = np.concatenate(anoms).astype(int) if need_anom else None
-    return E, L, cls, sec, anom
+    pack = (E, L, cls, sec, anom)
+    # The test loader is shuffle=False, so paths are in the same order at every epoch and
+    # the dumped per-clip score arrays stay aligned across the whole run.
+    return (pack, np.concatenate(paths)) if return_paths else pack
+
+
+def clip_scores(test_pack, sec2idx, s_scale, train_pack=None, eval_maha=False):
+    """Return {readout: per-clip score array}, higher = more anomalous, NaN where undefined.
+
+    `score_epoch` is a thin wrapper over this, so the scores persisted by `ScoreDump` are
+    literally the ones the reported AUROCs were computed from — there is no second copy of
+    these formulas that could drift out of sync with the logged curve.
+    """
+    Ete, Lte, cls_te, _sec_te, _y = test_pack
+    logp = Lte - torch.logsumexp(torch.from_numpy(Lte), dim=1, keepdim=True).numpy()
+    assigned = np.array([sec2idx.get(s, -1) for s in _sec_te])
+    rows = np.arange(len(assigned))
+
+    out = {
+        'neg_cos': -(Lte[rows, assigned] / s_scale).astype(np.float64),
+        'logit_nll': -logp[rows, assigned].astype(np.float64),
+    }
+    if eval_maha and train_pack is not None:
+        Etr, cls_tr = train_pack
+        mah = np.full(len(cls_te), np.nan, dtype=np.float64)
+        for c in CLASSES:
+            if not (cls_tr == c).any():
+                continue
+            mu, ic = fit_mahalanobis(Etr[cls_tr == c])
+            m = cls_te == c
+            if m.any():
+                mah[m] = maha_score(Ete[m], mu, ic)
+        out['maha_embed'] = mah
+    return out
+
+
+def auroc_by_class(scores, cls_te, y_anom):
+    """{readout: {class: auroc, 'mean': mean}} from per-clip scores."""
+    out = defaultdict(dict)
+    for r, s in scores.items():
+        for c in CLASSES:
+            m = cls_te == c
+            y = y_anom[m]
+            if y.min() == y.max() or not np.isfinite(s[m]).all():
+                continue
+            out[r][c] = roc_auc_score(y, s[m])
+    for r in list(out.keys()):
+        if out[r]:
+            out[r]['mean'] = float(np.mean([out[r][c] for c in CLASSES if c in out[r]]))
+        else:
+            del out[r]
+    return out
 
 
 def score_epoch(model, test_pack, sec2idx, s_scale, train_pack=None, eval_maha=False):
     """Return {readout: {class: auroc, 'mean': mean}} for one eval."""
-    Ete, Lte, cls_te, sec_te, y_anom = test_pack
-    logp = Lte - torch.logsumexp(torch.from_numpy(Lte), dim=1, keepdim=True).numpy()
-    assigned = np.array([sec2idx.get(s, -1) for s in sec_te])
-
-    maha_banks = None
-    if eval_maha and train_pack is not None:
-        Etr, cls_tr = train_pack
-        maha_banks = {c: fit_mahalanobis(Etr[cls_tr == c]) for c in CLASSES if (cls_tr == c).any()}
-
-    out = defaultdict(dict)
-    for c in CLASSES:
-        m = cls_te == c
-        y = y_anom[m]
-        if y.min() == y.max():
-            continue
-        a = assigned[m]
-        out['neg_cos'][c] = roc_auc_score(y, -(Lte[m][np.arange(len(a)), a] / s_scale))
-        out['logit_nll'][c] = roc_auc_score(y, -logp[m][np.arange(len(a)), a])
-        if maha_banks is not None and c in maha_banks:
-            mu, ic = maha_banks[c]
-            out['maha_embed'][c] = roc_auc_score(y, maha_score(Ete[m], mu, ic))
-    for r in list(out.keys()):
-        out[r]['mean'] = float(np.mean([out[r][c] for c in CLASSES if c in out[r]]))
-    return out
+    _E, _L, cls_te, _sec, y_anom = test_pack
+    return auroc_by_class(clip_scores(test_pack, sec2idx, s_scale, train_pack, eval_maha),
+                          cls_te, y_anom)
 
 
 def id_level_auroc(test_pack, sec2idx, s_scale, train_pack=None, eval_maha=False,
@@ -291,6 +324,8 @@ def main():
     ap.add_argument('--eval_every', type=int, default=1)
     ap.add_argument('--eval_maha', action='store_true',
                     help='also fit+score maha_embed each eval (extra train pass; slower)')
+    ap.add_argument('--no_dump_scores', dest='dump_scores', action='store_false',
+                    help='skip scores_by_epoch.npz (needed for honest held-out re-scoring)')
     # anchors for the printed verdict
     ap.add_argument('--rungA_auroc', type=float, default=0.80, help='Rung A ceiling to beat')
     ap.add_argument('--stgram_auroc', type=float, default=0.9075)
@@ -364,6 +399,7 @@ def main():
         f.write('epoch,section,n,neg_cos,maha_embed\n')
 
     best = defaultdict(lambda: (-1.0, -1, None))  # readout -> (mean, epoch, per-class dict)
+    dump = None                                   # built at the first eval (needs clip meta)
 
     for ep in range(1, args.epochs + 1):
         # ---- train one epoch ----
@@ -400,13 +436,20 @@ def main():
             print(f"  epoch {ep:3d}/{args.epochs}  loss={tr_loss:.4f} acc={tr_acc:.2f}%")
             continue
         s_scale = model.arc.s if not args.no_arcface else 1.0
-        test_pack = collect(model, test_loader, device, need_anom=True)
+        test_pack, te_paths = collect(model, test_loader, device, need_anom=True,
+                                      return_paths=True)
         train_pack = None
         if args.eval_maha:
             Etr, _, cls_tr, _, _ = collect(model, train_loader, device, need_anom=False)
             train_pack = (Etr, cls_tr)
-        res = score_epoch(model, test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        sc = clip_scores(test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        res = auroc_by_class(sc, test_pack[2], test_pack[4])
         id_res = id_level_auroc(test_pack, sec2idx, s_scale, train_pack, args.eval_maha)
+        if dump is None and args.dump_scores:
+            dump = ScoreDump(out_dir, clip_keys(te_paths), test_pack[2], test_pack[3],
+                             test_pack[4])
+        if dump is not None:
+            dump.add(ep, sc)
 
         with open(curve_path, 'a') as f:
             for r, d in res.items():

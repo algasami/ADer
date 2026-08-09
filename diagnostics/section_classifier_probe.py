@@ -91,6 +91,7 @@ import tabulate
 
 from data import get_loader
 # reuse the frozen-probe plumbing so the encoder + raw-Maha anchor stay identical
+from diagnostics.heldout_eval import ScoreDump, clip_keys
 from diagnostics.frozen_encoder_probe import (
     build_cfg, build_encoder, extract, gap_vectors, fit_mahalanobis, maha_score,
 )
@@ -181,14 +182,15 @@ class SectionHead(nn.Module):
 # feature extraction (concat GAP over taps) with section + class + anomaly
 # --------------------------------------------------------------------------- #
 @torch.no_grad()
-def extract_split(model, loader, device, need_anom):
+def extract_split(model, loader, device, need_anom, return_paths=False):
     """Return X (N,D) concat-GAP, cls (N,) str, sec (N,) str section-key,
     anom (N,) int or None. One frozen forward per batch."""
-    Xs, clss, secs, anoms = [], [], [], []
+    Xs, clss, secs, anoms, allp = [], [], [], [], []
     for bi, batch in enumerate(loader):
         imgs = batch['img'].to(device, non_blocking=True)
         cls = np.array(batch['cls_name'])
         paths = batch['img_path']
+        allp.append(np.array([str(p) for p in paths]))
         feats = extract(model, imgs)
         _, concat = gap_vectors(feats)
         Xs.append(concat.cpu().numpy())
@@ -203,6 +205,8 @@ def extract_split(model, loader, device, need_anom):
     cls = np.concatenate(clss)
     sec = np.concatenate(secs)
     anom = np.concatenate(anoms).astype(int) if need_anom else None
+    if return_paths:
+        return X, cls, sec, anom, np.concatenate(allp)
     return X, cls, sec, anom
 
 
@@ -294,16 +298,21 @@ def main():
     ap.add_argument('--stgram_auroc', type=float, default=None,
                     help='STgram-MFN mean AUROC (0-1) target')
     ap.add_argument('--plot', action='store_true')
+    ap.add_argument('--no_dump_scores', dest='dump_scores', action='store_false',
+                    help='skip scores_by_epoch.npz (needed for honest held-out re-scoring)')
+    ap.add_argument('--seed', type=int, default=0,
+                    help='seed repeat (CUDA is not bit-exact regardless)')
     ap.add_argument('--out_dir', default=None)
     args = ap.parse_args()
 
-    torch.manual_seed(0)
-    np.random.seed(0)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    np.random.seed(args.seed)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     cfg = build_cfg(args.cfg_path, args.batch, args.workers)
     cfg_name = os.path.splitext(os.path.basename(args.cfg_path))[0]
-    out_dir = args.out_dir or os.path.join('runs', 'section_probe', cfg_name)
+    out_dir = args.out_dir or os.path.join('runs', 'section_probe', f'{cfg_name}_seed{args.seed}')
     os.makedirs(out_dir, exist_ok=True)
     print(f"[cfg] {args.cfg_path}  data.root={cfg.data.root}")
 
@@ -352,7 +361,8 @@ def main():
 
     # ----- pass 2: frozen features on test split (normal + abnormal) -----
     print("[pass 2] extracting + scoring test features ...")
-    Xte, cls_te, sec_te, y_anom = extract_split(model, test_loader, device, need_anom=True)
+    Xte, cls_te, sec_te, y_anom, te_paths = extract_split(model, test_loader, device,
+                                                          need_anom=True, return_paths=True)
     Ete = head_embeddings(head, Xte, device)
     Lte = head_logits(head, Xte, device)               # (N, n_sections) margin-free logits
     logp = Lte - torch.logsumexp(torch.from_numpy(Lte), dim=1, keepdim=True).numpy()  # log-softmax
@@ -364,6 +374,10 @@ def main():
     auroc = defaultdict(dict)
     ap_ = defaultdict(dict)
     all_scores = defaultdict(dict)
+    # per-clip scores, kept for honest held-out re-scoring (docs/rescore_ladder.py). Rung A
+    # trains its head to convergence and evaluates ONCE, so there is no epoch axis here --
+    # the only selection the honest rule has to undo for this rung is over readouts.
+    clip_sc = {r: np.full(len(cls_te), np.nan) for r in readouts}
     for c in classes:
         m = cls_te == c
         y = y_anom[m]
@@ -371,10 +385,11 @@ def main():
             print(f"  [WARN] class {c}: test labels all == {y[0]}, AUROC undefined; skipping")
             continue
 
-        def record(name, s):
-            auroc[name][c] = roc_auc_score(y, s)
-            ap_[name][c] = average_precision_score(y, s)
-            all_scores[name][c] = (s, y)
+        def record(name, s, _m=m, _y=y):
+            auroc[name][c] = roc_auc_score(_y, s)
+            ap_[name][c] = average_precision_score(_y, s)
+            all_scores[name][c] = (s, _y)
+            clip_sc[name][_m] = s
 
         # generative anchors (higher dist = more anomalous)
         mu, ic = maha_raw[c]
@@ -397,6 +412,11 @@ def main():
         # neg cosine to assigned center: recover cosine from margin-free logits (/s)
         s_scale = head.arc.s if not args.no_arcface else 1.0
         record('neg_cos', -(Lte[m][np.arange(len(a)), a] / s_scale))
+
+    if args.dump_scores:
+        dump = ScoreDump(out_dir, clip_keys(te_paths), cls_te, sec_te, y_anom)
+        dump.add(args.head_epochs, clip_sc)      # single eval: one "epoch" row
+        print(f"[out] {dump.path}")
 
     # ----- report -----
     header = ['readout'] + classes + ['mean_AUROC', 'mean_AP']

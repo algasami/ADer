@@ -1,5 +1,13 @@
 # ToyCar / ToyConveyor frontier analysis
 
+> **SUPERSEDED in part (2026-08-10).** Re-scored under the honest rule
+> (`docs/plots/ladder_honest/CONCLUSION.md`): the cross-rung oracle's headroom below is real
+> but does **not** need five rungs — Rung E alone reaches **88.16 held-out** once the epoch is
+> chosen per class, and it survives choosing that policy on a disjoint half, so it is not
+> oracle inflation. What it does need is up to six checkpoints. Choosing only the *readout*
+> per class (Rung F's actual mechanism) is worth −0.07. Also: **B beats E by 1.45** under the
+> honest rule, so E's per-class redistribution is not a wash but a net loss.
+
 **Question.** Rung E closed the labels/objective ladder at 86.9 mean AUROC (-3.9 to STgram-MFN
 90.75), with the residual now concentrated in two classes: ToyCar (-9.2) and ToyConveyor (-5.7)
 — fan/pump/slider/valve all land within ~1-2 pts of STgram. Why these two, and is there cheap
